@@ -23,17 +23,8 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 
 setup(
-    name="graph_wrap",  # Required
-    # Versions should comply with PEP 440:
-    # https://www.python.org/dev/peps/pep-0440/
-    #
-    # For a discussion on single-sourcing the version across setup.py and the
-    # project code, see
-    # https://packaging.python.org/en/latest/single_source_version.html
+    name="graph-wrap",
     version="0.0.1",
-    # This is a one-line description or tagline of what your project does. This
-    # corresponds to the "Summary" metadata field:
-    # https://packaging.python.org/specifications/core-metadata/#summary
     description="Transform a tastypie REST-based API into a fully compliant GraphQL API.",
     long_description=long_description,  # Optional
     long_description_content_type="text/markdown",
