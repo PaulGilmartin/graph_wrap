@@ -57,8 +57,16 @@ setup(
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
+        "Django>=1.11",
         "django-tastypie==0.14.3",
+        "graphene>=2.1.7,<3",
         "graphene-django==2.9.0",
+        "graphql-core>=2.1.0,<3",
+        "graphql-relay==2.0.1",
+        "promise>=2.1",
+        "python-dateutil==2.8.1",
+        "python-mimeparse==1.6.0",
+        "pytz==2019.3",
     ],
     project_urls={
         "Source": "https://github.com/PaulGilmartin/graph_wrap",
