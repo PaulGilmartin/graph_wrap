@@ -4,10 +4,8 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pipenv-setup = "*"
 
 [packages]
 graphene-django = "==2.9.0"
-django-tastypie = "*"
-
-[requires]
-python_version = "3.7"
+django-tastypie = "==0.14.3"
