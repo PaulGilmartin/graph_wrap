@@ -23,10 +23,10 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 
 setup(
-    name="graph-wrap-test",
-    version="0.0.3",
+    name="graph-wrap",
+    version="0.0.1",
     description="Transform a tastypie REST-based API into a fully compliant GraphQL API.",
-    long_description=long_description,  # Optional
+    long_description=long_description, 
     long_description_content_type="text/markdown",
     url="https://github.com/PaulGilmartin/graph_wrap",
     author="Paul Gilmartin",
@@ -49,7 +49,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         "graphene-django==2.9.0",
-        "django-tastypie==0.14.3",
+        "django-tastypie>=0.14.0",
     ],
     project_urls={
         "Source": "https://github.com/PaulGilmartin/graph_wrap",

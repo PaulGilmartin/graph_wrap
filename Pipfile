@@ -8,4 +8,4 @@ pipenv-setup = "*"
 
 [packages]
 graphene-django = "==2.9.0"
-django-tastypie = "==0.14.3"
+django-tastypie = ">=0.14.0"
