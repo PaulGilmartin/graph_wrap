@@ -121,5 +121,3 @@ STATIC_URL = '/static/'
 
 TASTYPIE_API_PATH = 'urls.api'
 
-GRAPHENE = {'SCHEMA': 'graph_wrap.schema'}
-
