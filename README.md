@@ -1,6 +1,6 @@
 # GraphWrap #
 
-GraphWrap is a python library which, by adding only a couple of lines of code, can extend an existing
+GraphWrap is a python library which, by adding only a couple of lines of code to your django project, can extend an existing
 [django-tastypie](https://django-tastypie.readthedocs.io/en/latest/)
 REST-based API with a [GraphQL](https://graphql.org/learn/) interface.
 This is achieved by leveraging [Graphene-Django](https://docs.graphene-python.org/projects/django/en/latest/) to dynamically 
@@ -292,12 +292,12 @@ HTTP client, which has a integration with GraphQL):
 
 * REST:
 
-![](tests/images/rest_author_list.png)
+![](https://raw.githubusercontent.com/PaulGilmartin/graph_wrap/master/tests/images/rest_author_list.png)
 
 
 * GraphQL
 
-![](tests/images/graphql_all_authors.png)
+![](https://raw.githubusercontent.com/PaulGilmartin/graph_wrap/master/tests/images/graphql_all_authors.png)
 
 
 
@@ -305,12 +305,12 @@ HTTP client, which has a integration with GraphQL):
 
 * REST
 
-![](tests/images/rest_author_detail.png)
+![](https://raw.githubusercontent.com/PaulGilmartin/graph_wrap/master/tests/images/rest_author_detail.png)
 
 
 * GraphQL
 
-![](tests/images/graphql_author_single.png)
+![](https://raw.githubusercontent.com/PaulGilmartin/graph_wrap/master/tests/images/graphql_author_single.png)
 
 
 
@@ -318,23 +318,23 @@ HTTP client, which has a integration with GraphQL):
 
 * REST
 
-![](tests/images/rest_author_orm.png)
+![](https://raw.githubusercontent.com/PaulGilmartin/graph_wrap/master/tests/images/rest_author_orm.png)
 
 
 * GraphQL
 
-![](tests/images/test_img.png)
+![](https://raw.githubusercontent.com/PaulGilmartin/graph_wrap/master/tests/images/test_img.png)
 
 
 ### Some fancier GraphQL query examples - see GraphQL [queries](https://graphql.org/learn/queries/) for more
 
 * Nesting
 
-![](tests/images/graphql_all_authors_nested.png)
+![](https://raw.githubusercontent.com/PaulGilmartin/graph_wrap/master/tests/images/graphql_all_authors_nested.png)
 
 
 * Fragments
 
-![](tests/images/graphql_fragments.png)
+![](https://raw.githubusercontent.com/PaulGilmartin/graph_wrap/master/tests/images/graphql_fragments.png)
 
 

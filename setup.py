@@ -25,8 +25,9 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 setup(
     name="graph-wrap",
     version="0.0.1",
-    description="Transform a tastypie REST-based API into a fully compliant GraphQL API.",
-    long_description=long_description, 
+    description="Extend an existing tastypie REST-based API with a GraphQL"
+                " interface with a only a couple of lines of code.",
+    long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/PaulGilmartin/graph_wrap",
     author="Paul Gilmartin",
