@@ -61,9 +61,9 @@ Each of the above requirements can be run using Python >=2.7 and Django >=1.11.
 
 ### Registering the GraphQL resource
 
-GraphWrap exposes the GraphQL schema via a tastypie resource (which is effectively a Django class-based view)
-- `GraphQLResource`. As with all resources, we are required to register `GraphQLResource` with the tastypie Api instance
-before we can interact with it via HTTP requests. Once registered, `GraphQLResource` builds and exposes the a GraphQL
+GraphWrap exposes the GraphQL schema via a tastypie resource `GraphQLResource` (which is effectively a Django class-based view).
+As with all resources, we are required to register `GraphQLResource` with the tastypie Api instance
+before we can interact with it via HTTP requests. Once registered, `GraphQLResource` builds and exposes a GraphQL
 queryable schema via the `/graphql` endpoint.
 
 ```
@@ -82,7 +82,7 @@ urlpatterns = [
 
 ### Querying the GraphQL resource
 
-GraphWrap exposes the GraphQL API via the `/graphql` URL. By default, this endpoint uses the default
+As mentioned above, GraphWrap exposes the GraphQL API via the `/graphql` URL. By default, this endpoint uses the default
 authentication provided by tastypie's ``Resource`` class. Later versions of GraphWrap will allow this 
 authentication to be extended via setting config.
 
@@ -105,7 +105,7 @@ In this section we give a brief overview of how to use GraphWrap via examining
 a simple concrete example. 
 
 
-#Set-up
+### Set-up
 Suppose we have the following basic django models and corresponding tastypie resources (
 a fully executable version of this example can be found in graph_wrap.tests):
 
