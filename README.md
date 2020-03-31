@@ -82,9 +82,7 @@ urlpatterns = [
 
 ### Querying the GraphQL resource
 
-As mentioned above, GraphWrap exposes the GraphQL API via the `/graphql` URL. By default, this endpoint uses the default
-authentication provided by tastypie's ``Resource`` class. Later versions of GraphWrap will allow this 
-authentication to be extended via setting config.
+As mentioned above, GraphWrap exposes the GraphQL API via the `/graphql` URL. 
 
 ### Settings
 
@@ -277,6 +275,24 @@ Important points to note about the schema produced by GraphWrap:
     }
     ```
    
+   
+### Authentication and Authorization of GraphQLResource
+
+The authentication/authorization applied 
+when querying `/graphql` is the authentication/authorization defined on the resource corresponding to the root field 
+of the query applied. This is consistent with the way tastypie handles authenticaiton/authorization.
+So, for example, the following query would invoke whatever authentication/authorization
+was defined on the `AuthorResource`:
+
+``` 
+    {
+      all_authors(orm_filters: "name=Paul") {
+        name
+      }
+    }
+```
+
+
   
    
 ## Making Queries: REST vs GraphQL
