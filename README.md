@@ -48,9 +48,9 @@ Django view based REST framework.
 
 ### Core Requirements
 
-* `graphene-django==2.13.0"` 
+* `graphene-django==2.13.0` 
 
-* `django-tastypie>=0.14.0"`
+* `django-tastypie>=0.14.0`
 
 Each of the above requirements can be run using Python >=2.7 and Django >=1.11.
 
