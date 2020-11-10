@@ -29,6 +29,7 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
             content='My first post!',
             author=self.paul,
             date=datetime.datetime.now(),
+            rating='7.00',
         )
         self.pauls_first_post.files.add(self.picture)
         self.pauls_first_post.files.add(self.second_picture)
@@ -117,6 +118,7 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
                         name
                         content_type
                     }
+                    rating
                 }
             }
             ''' % self.pauls_first_post.pk

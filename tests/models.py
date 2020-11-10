@@ -13,6 +13,7 @@ class Post(models.Model):
     date = models.DateTimeField()
     author = models.ForeignKey(Author, null=True, on_delete=models.SET_NULL)
     files = models.ManyToManyField('Media')
+    rating = models.DecimalField(null=True, decimal_places=20, max_digits=40)
 
 
 class Media(models.Model):

@@ -21,6 +21,7 @@ class PostResource(ModelResource):
     author = fields.ForeignKey(AuthorResource, attribute='author', null=True)
     files = fields.ManyToManyField('tests.api.MediaResource', attribute='files')
     date = fields.DateTimeField('date')
+    rating = fields.DecimalField('rating', null=True)
 
     class Meta:
         queryset = Post.objects.all()
