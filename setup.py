@@ -24,7 +24,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="graph-wrap",
-    version="0.0.4",
+    version="0.0.5",
     description="Extend an existing tastypie REST-based API with a GraphQL"
                 " interface with a only a couple of lines of code.",
     long_description=long_description,
