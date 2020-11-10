@@ -52,7 +52,7 @@ class SchemaFactory(object):
             query_class_attrs.update(**query_attributes.to_dict())
             self.resource_class_to_schema[resource.__class__] = (
                 query_attributes.graphene_type)
-        Query = type('Query', (graphene.ObjectType,), query_class_attrs)
+        Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)
         return graphene.Schema(query=Query)
 
     def _usable_resources(self):
