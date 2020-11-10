@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 from abc import abstractmethod
+from decimal import Decimal as _Decimal
 
 import six
 from graphene import (
@@ -187,8 +188,24 @@ class TimeValuedFieldTransformer(ScalarValuedFieldTransformer):
     _tastypie_field_dehydrated_type = 'time'
 
 
+class UnicodeCompatibleDecimal(Decimal):
+    """
+    The `Decimal` scalar type represents a python Decimal.
+    """
+
+    @staticmethod
+    def serialize(dec):
+        if isinstance(dec, six.string_types):
+            dec = _Decimal(dec)
+        assert isinstance(
+            dec, _Decimal), 'Received not compatible Decimal "{}"'.format(
+            repr(dec)
+        )
+        return str(dec)
+
+
 class DecimalValuedFieldTransformer(ScalarValuedFieldTransformer):
-    _graphene_type = Decimal
+    _graphene_type = UnicodeCompatibleDecimal
     _tastypie_field_dehydrated_type = 'decimal'
 
 
