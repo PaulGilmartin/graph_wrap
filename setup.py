@@ -24,7 +24,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="graph-wrap",
-    version="0.0.1",
+    version="0.0.2",
     description="Extend an existing tastypie REST-based API with a GraphQL"
                 " interface with a only a couple of lines of code.",
     long_description=long_description,
@@ -49,7 +49,7 @@ setup(
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        "graphene-django==2.9.0",
+        "graphene-django==2.13.0",
         "django-tastypie>=0.14.0",
     ],
     project_urls={
