@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from graphene_django.views import GraphQLView
 from tastypie.resources import Resource
 

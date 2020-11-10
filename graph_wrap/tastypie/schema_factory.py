@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import graphene
 from graphene_django.settings import perform_import
 from tastypie.resources import ModelResource

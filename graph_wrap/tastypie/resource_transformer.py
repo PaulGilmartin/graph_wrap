@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import json
 from abc import abstractmethod
 
@@ -29,7 +31,7 @@ def transform_resource(tastypie_resource):
         class_attrs[resolver_method_name] = (
             transformer.graphene_field_resolver_method())
     graphene_type = type(
-        graphene_type_name,
+        str(graphene_type_name),
         (ObjectType,),
         class_attrs,
     )

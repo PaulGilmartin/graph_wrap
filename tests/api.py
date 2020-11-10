@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from tastypie import fields
 from tastypie.resources import ModelResource
 from .models import Author, Post, Media
@@ -8,7 +10,7 @@ class AuthorResource(ModelResource):
 
     class Meta:
         queryset = Author.objects.all()
-        resource_name = 'author'
+        resource_name = u'author'
         filtering = {
             'age': ('exact',),
             'name': ('exact',),
@@ -22,11 +24,11 @@ class PostResource(ModelResource):
 
     class Meta:
         queryset = Post.objects.all()
-        resource_name = 'post'
+        resource_name = u'post'
 
 
 class MediaResource(ModelResource):
     class Meta:
         queryset = Media.objects.all()
-        resource_name = 'media'
+        resource_name = u'media'
 

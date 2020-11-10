@@ -1,7 +1,10 @@
+from __future__ import unicode_literals
+
 import datetime
 import json
 
 from tastypie.test import ResourceTestCaseMixin
+
 from django.test import TransactionTestCase
 
 from tests.models import Author, Post, Media
