@@ -13,7 +13,7 @@ from tests.models import Author, Post, Media
 class TestApi(ResourceTestCaseMixin, TransactionTestCase):
     def setUp(self):
         super(TestApi, self).setUp()
-        self.graphql_endpoint = '/v1/graphql/'
+        self.graphql_endpoint = '/tastypie/v1/graphql/'
         self.picture = Media.objects.create(
             name='elephant',
             content_type='jpg',
@@ -212,7 +212,7 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
 
     def test_rest_endpoint_query(self):
         response = self.client.get(
-            '/v1/author/{}/'.format(self.paul.pk),
+            '/tastypie/v1/author/{}/'.format(self.paul.pk),
             {},
             content_type="application/json",
         )
@@ -220,4 +220,4 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
         posts = json.loads(response.content)['posts']
         self.assertEqual(1, len(posts))
         self.assertEqual(
-            '/v1/post/{}/'.format(self.pauls_first_post.pk), posts[0])
+            '/tastypie/v1/post/{}/'.format(self.pauls_first_post.pk), posts[0])

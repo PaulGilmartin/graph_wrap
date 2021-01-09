@@ -2,11 +2,11 @@ from __future__ import unicode_literals
 
 from tastypie import fields
 from tastypie.resources import ModelResource
-from .models import Author, Post, Media
+from tests.models import Author, Post, Media
 
 
 class AuthorResource(ModelResource):
-    posts = fields.ManyToManyField('tests.api.PostResource', attribute='post_set')
+    posts = fields.ManyToManyField('tests.tastypie_api.api.PostResource', attribute='post_set')
 
     class Meta:
         queryset = Author.objects.all()
@@ -19,7 +19,7 @@ class AuthorResource(ModelResource):
 
 class PostResource(ModelResource):
     author = fields.ForeignKey(AuthorResource, attribute='author', null=True)
-    files = fields.ManyToManyField('tests.api.MediaResource', attribute='files')
+    files = fields.ManyToManyField('tests.tastypie_api.api.MediaResource', attribute='files')
     date = fields.DateTimeField('date')
     rating = fields.DecimalField('rating', null=True)
 

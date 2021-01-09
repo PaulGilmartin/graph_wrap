@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 from django.core.handlers.wsgi import WSGIRequest
+# Remember directives
 
 
 def transform_graphql_resolve_info(
