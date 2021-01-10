@@ -6,6 +6,7 @@ import graphene
 import six
 from graphene import ObjectType
 from graphene.types.generic import GenericScalar
+from rest_framework import serializers
 
 from graph_wrap.django_rest_framework.field_resolvers import JSONResolver
 
@@ -35,35 +36,17 @@ def field_transformer(field):
     a tastypie field as input, instantiates the appropriate
     concrete FieldTransformer class for that field.
     """
-    # ModelSerializer.serializer_field_mapping
-    # drf_to_model = {k: v for v, k in ModelSerializer.serializer_field_mapping.items()}
-    # t = drf_to_model[field]
-    #
-    # t = t()
-    # t.get_internal_type()
-    # 'TextField'
-    # from django.db import connection
-    # t.db_type(connection)
-    # 'text'
+    serializer_field_to_transformer = {
+        serializers.CharField: StringValuedFieldTransformer}
     try:
-        transformer_class = FieldTransformerMeta.registry[
-            (tastypie_field.dehydrated_type, tastypie_field.is_m2m)]
+        transformer_class = serializer_field_to_transformer[
+            field.__class__]
     except KeyError:
-        raise KeyError('Dehydrated type not recognized')
-    return transformer_class(tastypie_field)
+        raise KeyError('Field type not recognized')
+    return transformer_class(field)
 
 
 class FieldTransformerMeta(type):
-    """Metaclass for FieldTransformers.
-
-    Provides functionality to track the names of all
-    concrete subclasses of FieldTransformer. This data
-    can then be used in the factory function 'field_transformer'
-    when choosing the appropriate transformer class. This
-    avoids having to hard code (and hence continually update)
-    the list of concrete subclasses in the field_transformer
-    function.
-    """
     registry = dict()
 
     def __new__(mcs, name, bases, attrs):
@@ -81,7 +64,7 @@ class FieldTransformerMeta(type):
         return converter_class
 
 
-class FieldTransformer(six.with_metaclass(FieldTransformerMeta, object)):
+class FieldTransformer(six.with_metaclass(object)):
     """Functionality for transforming tastypie ApiField to a graphene field."""
 
     _tastypie_field_dehydrated_type = None
