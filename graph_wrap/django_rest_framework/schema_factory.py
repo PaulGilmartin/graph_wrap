@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import graphene
 from graphene_django.settings import perform_import
+from rest_framework import viewsets
 
 from .field_resolvers import (
     AllItemsQueryResolver,
@@ -40,20 +41,37 @@ class SchemaFactory(object):
         Can pass either the full python path of the API
         instance or an Api instance itself.
         """
-        pass
+        from rest_framework.schemas.generators import EndpointEnumerator
+        from rest_framework.schemas.generators import BaseSchemaGenerator
+
+        # This should actually eliminate the need to pass
+        # in a router at all (and hence define any
+        # extra config). Works in background
+        # by inspecting the ROOT_URL_CONF setting.
+        # We can probably do something similar for tastypie?
+        api_endpoints = EndpointEnumerator().get_api_endpoints()
+        generator = BaseSchemaGenerator()
+        views = []
+        for endpoint in api_endpoints:
+            _, method, view_callback = endpoint
+            view = generator.create_view(view_callback, method)
+            views.append(view)
+        return cls(views).create()
+
+    @staticmethod
+    def _usable_viewset(viewset):
+        # Should we use this?
+        return issubclass(viewset, viewsets.ModelViewSet)
 
     def create(self):
         query_class_attrs = dict()
-        for api in self._usable_apis():
+        for api in self._apis:
             query_attributes = QueryAttributes(api)
             query_class_attrs.update(**query_attributes.to_dict())
             self.api_class_to_schema[api.__class__] = (
                 query_attributes.graphene_type)
         Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)
         return graphene.Schema(query=Query)
-
-    def _usable_apis(self):
-        return []
 
 
 class QueryAttributes(object):

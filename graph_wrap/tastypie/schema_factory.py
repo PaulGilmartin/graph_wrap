@@ -35,6 +35,7 @@ class SchemaFactory(object):
 
     @classmethod
     def create_from_api(cls, api):
+        # change name. Maybe make this whole class into a function?
         """
         Create a schema from the tastypie API instance.
 
