@@ -12,9 +12,9 @@ from graph_wrap.django_rest_framework.field_resolvers import JSONResolver
 
 def transform_api(api):
     class_attrs = dict()
-    graphene_type_name = api.basename + '_type' # Does basename limit the view type?
+    graphene_type_name = api.basename + '_type'  # Does basename limit the view type?
     serializer = api.get_serializer()
-    for field_name, field in serializer.fields.items():
+    for field_name, field in serializer.fields.items():  # .fields limits to views or viewsets?
         transformer = field_transformer(field)
         class_attrs[field_name] = transformer.graphene_field()
         resolver_method_name = 'resolve_{}'.format(field_name)
