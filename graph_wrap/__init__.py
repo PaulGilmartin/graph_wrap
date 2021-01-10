@@ -9,3 +9,7 @@ __all__ = ['schema', 'GraphQLResource']
 # Lazy evaluation so apps can load before use
 def schema():
     return SchemaFactory.create_from_api(settings.TASTYPIE_API_PATH)
+
+
+def django_rest_schema():
+    return SchemaFactory.create_from_api(settings.TASTYPIE_API_PATH)

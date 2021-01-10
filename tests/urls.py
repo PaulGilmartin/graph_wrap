@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 
-from tests.django_rest_framework_api.api import graphql_view
+from graph_wrap.django_rest_framework.graphql_view import graphql_view
 from tests.django_rest_framework_api.urls import router
 from tests.tastypie_api.urls import api
 

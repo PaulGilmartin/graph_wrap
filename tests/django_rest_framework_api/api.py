@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from rest_framework import serializers, viewsets, views
+from rest_framework import serializers, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -27,9 +27,3 @@ class AuthorViewSet(viewsets.ModelViewSet):
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-
-
-@api_view(['POST'])
-def graphql_view(request):
-    return Response()
-
