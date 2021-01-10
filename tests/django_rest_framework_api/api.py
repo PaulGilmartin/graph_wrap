@@ -1,6 +1,9 @@
 from __future__ import unicode_literals
 
 from rest_framework import serializers, viewsets, views
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 from tests.models import Author, Post
 
 
@@ -26,8 +29,7 @@ class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
 
 
-class GraphQLViewSet(viewsets.ModelViewSet):
-    # Probably best just to do this as a regular function view?
-    def get_serializer_class(self):
-        return None
+@api_view(['POST'])
+def graphql_view(request):
+    return Response()
 
