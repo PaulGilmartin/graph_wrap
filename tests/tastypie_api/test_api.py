@@ -210,6 +210,9 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
         self.assertEqual('My first post!', post_data['content'])
         self.assertEqual({'name': 'Paul'}, post_data['author'])
 
+    def test_query_with_directive(self):
+        pass
+
     def test_rest_endpoint_query(self):
         response = self.client.get(
             '/tastypie/v1/author/{}/'.format(self.paul.pk),

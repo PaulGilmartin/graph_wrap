@@ -149,7 +149,7 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         from .schema_factory import SchemaFactory
         # Needs to be lazy since at this point the related
         # type may not yet have been created
-        return lambda: SchemaFactory.resource_class_to_schema[
+        return lambda: SchemaFactory.api_class_to_schema[
             self._resource_class]
 
 

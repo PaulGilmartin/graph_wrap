@@ -28,7 +28,7 @@ class SchemaFactory(object):
     resource which does not satisfy this condition will
     be silently filtered.
     """
-    resource_class_to_schema = dict()
+    api_class_to_schema = dict()
 
     def __init__(self, apis):
         self._apis = apis
@@ -41,21 +41,21 @@ class SchemaFactory(object):
         Can pass either the full python path of the API
         instance or an Api instance itself.
         """
-        tastypie_api = perform_import(api, '')
+        api = perform_import(api, '')
         resources = api._registry.values()
         return cls(resources).create()
 
     def create(self):
         query_class_attrs = dict()
-        for resource in self._usable_resources():
+        for resource in self._usable_apis():
             query_attributes = QueryAttributes(resource)
             query_class_attrs.update(**query_attributes.to_dict())
-            self.resource_class_to_schema[resource.__class__] = (
+            self.api_class_to_schema[resource.__class__] = (
                 query_attributes.graphene_type)
         Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)
         return graphene.Schema(query=Query)
 
-    def _usable_resources(self):
+    def _usable_apis(self):
         return [
             resource for resource in self._apis if
             issubclass(resource.__class__, ModelResource)
