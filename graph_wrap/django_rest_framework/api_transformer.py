@@ -35,6 +35,16 @@ def field_transformer(field):
     a tastypie field as input, instantiates the appropriate
     concrete FieldTransformer class for that field.
     """
+    # ModelSerializer.serializer_field_mapping
+    # drf_to_model = {k: v for v, k in ModelSerializer.serializer_field_mapping.items()}
+    # t = drf_to_model[field]
+    #
+    # t = t()
+    # t.get_internal_type()
+    # 'TextField'
+    # from django.db import connection
+    # t.db_type(connection)
+    # 'text'
     try:
         transformer_class = FieldTransformerMeta.registry[
             (tastypie_field.dehydrated_type, tastypie_field.is_m2m)]
