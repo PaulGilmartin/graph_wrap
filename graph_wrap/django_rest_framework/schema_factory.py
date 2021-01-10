@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import graphene
 from graphene_django.settings import perform_import
-from tastypie.resources import ModelResource
 
 from .field_resolvers import (
     AllItemsQueryResolver,
@@ -14,17 +13,17 @@ from .api_transformer import transform_api
 class SchemaFactory(object):
     """Factory class for creating a graphene Schema object.
 
-    Given a list of tastypie resources, this object
+    Given a list of DRF view sets, this object
     has the functionality to produce a graphene Schema object.
-    This is achieved by collecting, for each resource,
-    the graphene ObjectType produced by transforming that resource
+    This is achieved by collecting, for each viewset,
+    the graphene ObjectType produced by transforming that view set
     and also the relevant root Query data for that ObjectType
     (mounted field and field resolver). This data is then used
     to dynamically build a graphene Query class, which is
     passed into a Schema as usual.
 
     Note: currently only resources which inherit from
-    tastypie.resources.ModelResource can be used. Any
+    rest_framework.viewsets.ModelViewSet can be used. Any
     resource which does not satisfy this condition will
     be silently filtered.
     """
@@ -36,12 +35,12 @@ class SchemaFactory(object):
     @classmethod
     def create_from_api(cls, api):
         """
-        Create a schema from the tastypie API instance.
+        Create a schema from the DRF viewset instance.
 
         Can pass either the full python path of the API
         instance or an Api instance itself.
         """
-        tastypie_api = perform_import(api, '')
+        api = perform_import(api, '')
         resources = api._registry.values()
         return cls(resources).create()
 
@@ -56,10 +55,7 @@ class SchemaFactory(object):
         return graphene.Schema(query=Query)
 
     def _usable_resources(self):
-        return [
-            resource for resource in self._apis if
-            issubclass(resource.__class__, ModelResource)
-        ]
+        return []
 
 
 class QueryAttributes(object):

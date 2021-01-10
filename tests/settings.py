@@ -121,4 +121,5 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 TASTYPIE_API_PATH = 'urls.api'
+DJANGO_REST_ROUTER_PATH = 'django_rest_framework_api.urls.router'
 

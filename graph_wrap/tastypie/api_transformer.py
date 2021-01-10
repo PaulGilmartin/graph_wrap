@@ -21,7 +21,7 @@ from graphene.types.generic import GenericScalar
 from .field_resolvers import JSONResolver
 
 
-def transform_resource(tastypie_resource):
+def transform_api(tastypie_resource):
     """Transform a tastypie resource into a graphene ObjectType."""
     class_attrs = dict()
     graphene_type_name = tastypie_resource._meta.resource_name + '_type'
