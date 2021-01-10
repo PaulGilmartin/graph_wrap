@@ -13,7 +13,7 @@ from tests.models import Author, Post, Media
 class TestApi(ResourceTestCaseMixin, TransactionTestCase):
     def setUp(self):
         super(TestApi, self).setUp()
-        self.graphql_endpoint = '/graphql/'
+        self.graphql_endpoint = '/django_rest/graphql/'
         self.picture = Media.objects.create(
             name='elephant',
             content_type='jpg',
