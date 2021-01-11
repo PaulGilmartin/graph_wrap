@@ -62,6 +62,8 @@ class QueryResolver(GrapheneFieldResolver):
             selectable_fields_api,
             **kwargs
         )
+        # consider using threads to dynamically update the class,
+        # e.g. simple history?
         resource_response = rest_resolver_method(get_request)
         if resource_response.status_code in (
                 300, 307, 400, 401, 403, 404, 405, 500):
