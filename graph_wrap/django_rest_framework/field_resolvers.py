@@ -44,9 +44,9 @@ class JSONResolver(GrapheneFieldResolver):
 
 class QueryResolver(GrapheneFieldResolver):
     """Callable which acts as resolver for a field on the root Query."""
-    def __init__(self, field_name, resource):
+    def __init__(self, field_name, api):
         super(QueryResolver, self).__init__(field_name)
-        self._resource = resource
+        self._api = api
 
     @classmethod
     def rest_resource_resolver_method(cls, resource_adapter, **kwargs):
@@ -55,8 +55,9 @@ class QueryResolver(GrapheneFieldResolver):
     def __call__(self, root, info, **kwargs):
         get_request = transform_graphql_resolve_info(
             self._field_name, info, **kwargs)
+        self._api.get_serializer()     #  can we bind a custom get_serializer here to filter fields?
         selectable_fields_resource = _selectable_fields_mutator(
-            self._resource)
+            self._api)
         rest_resolver_method = self.rest_resource_resolver_method(
             selectable_fields_resource,
             **kwargs
@@ -73,14 +74,16 @@ class QueryResolver(GrapheneFieldResolver):
 class AllItemsQueryResolver(QueryResolver):
     """Callable which acts as resolver for an 'all_items' field' on the Query.
 
-    For example, if we had a tastypie ProfileResource with underlying
+    For example, if we had a ProfileAPI with underlying
     Django model 'Profile', an instance of this class provides
     functionality for the 'resolve_all_profiles' resolver
     on the root Query (analogous to a GET request to the /profile
     list endpoint in REST terms).
     """
     def __call__(self, root, info, **kwargs):
-        pass
+        response_json = super(AllItemsQueryResolver, self).__call__(
+            root, info, **kwargs)
+        response_json
 
     @classmethod
     def rest_resource_resolver_method(cls, resource_adapter, **kwargs):
@@ -104,13 +107,13 @@ class SingleItemQueryResolver(QueryResolver):
         pass
 
 
-def _selectable_fields_mutator(resource):
-    """Mutate resource so that only selected fields are dehydrated.
+def _selectable_fields_mutator(api):
+    """Mutate resource so that only selected fields are serialized.
 
      This function dynamically binds a customised version of the
-     standard tastypie full_dehydrate resource method to the input
+     standard DRF view get_serializer method to the input
      method. This customised version ensures we only iterate over
-     and hence dehydrate the fields as dictated by the appropriate
+     and hence serialize the fields as dictated by the appropriate
      key in the 'selected_fields' dictionary.
 
      Whilst this approach of dynamically binding a custom method
@@ -120,10 +123,12 @@ def _selectable_fields_mutator(resource):
      1. It minimizes the amount of source code we need to touch
         in order to be able to use this library (e.g. if we had
         used mixins instead, clients would need to then add these
-        mixins to the tastypie source code.)
+        mixins to the tastypie source code. If we'd subclassed the
+        view to override get_serializer, it may cause later issues
+        in client code (e.g. if there was any type checking))
      2. It makes few assumptions about client codes resource/
-        field implementation (e.g. will work with custom
-        field types/ custom resources).
+        field implementation (e.g. should work with custom
+        field types/ custom views).
      """
     pass
 

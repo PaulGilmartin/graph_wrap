@@ -79,7 +79,7 @@ class QueryAttributes(object):
     """Create the graphene Query class attributes relevant to a resource."""
 
     def __init__(self, api):
-        self._resource = api
+        self._api = api
         self.graphene_type = transform_api(api)
         self._single_item_field_name = api.basename
         self._all_items_field_name = 'all_{}s'.format(
@@ -107,7 +107,7 @@ class QueryAttributes(object):
     def _all_items_query_resolver(self):
         return AllItemsQueryResolver(
             field_name=self._all_items_field_name,
-            resource=self._resource,
+            api=self._api,
         )
 
     def _single_item_query_field(self):
@@ -120,6 +120,6 @@ class QueryAttributes(object):
     def _single_item_query_resolver(self):
         return SingleItemQueryResolver(
             field_name=self._single_item_field_name,
-            resource=self._resource,
+            api=self._api,
         )
 
