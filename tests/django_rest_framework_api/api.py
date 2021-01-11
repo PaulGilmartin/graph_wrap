@@ -1,8 +1,7 @@
 from __future__ import unicode_literals
 
 from rest_framework import serializers, viewsets
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+
 
 from tests.models import Author, Post
 
@@ -16,7 +15,7 @@ class AuthorSerializer(serializers.HyperlinkedModelSerializer):
 class PostSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Post
-        fields = ['title', 'date', 'rating', 'author']
+        fields = ['content']
 
 
 class AuthorViewSet(viewsets.ModelViewSet):

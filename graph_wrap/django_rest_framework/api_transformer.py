@@ -15,7 +15,7 @@ def transform_api(api):
     class_attrs = dict()
     graphene_type_name = api.basename + '_type'  # Does basename limit the view type?
     serializer = api.get_serializer()
-    for field_name, field in serializer.fields.items():  # .fields limits to views or viewsets?
+    for field_name, field in serializer.fields.items():# .fields limits to views or viewsets?
         transformer = field_transformer(field)
         class_attrs[field_name] = transformer.graphene_field()
         resolver_method_name = 'resolve_{}'.format(field_name)
@@ -45,42 +45,30 @@ def field_transformer(field):
         raise KeyError('Field type not recognized')
     return transformer_class(field)
 
+#
+# class FieldTransformerMeta(type):
+#     registry = dict()
+#
+#     def __new__(mcs, name, bases, attrs):
+#         """Automatically adds each FieldTransformer class into a registry.
+#
+#         Upon class definition/compilation of a FieldTransformer subclass,
+#         transform_cls, the registry dictionary is populated with a key:value
+#         pair of the form transform_cls.identifier(): transform_cls.
+#         """
+#         converter_class = super(FieldTransformerMeta, mcs).__new__(
+#             mcs, name, bases, attrs)
+#         identifier = converter_class.identifier()
+#         if identifier:
+#             mcs.registry[identifier] = converter_class
+#         return converter_class
 
-class FieldTransformerMeta(type):
-    registry = dict()
 
-    def __new__(mcs, name, bases, attrs):
-        """Automatically adds each FieldTransformer class into a registry.
-
-        Upon class definition/compilation of a FieldTransformer subclass,
-        transform_cls, the registry dictionary is populated with a key:value
-        pair of the form transform_cls.identifier(): transform_cls.
-        """
-        converter_class = super(FieldTransformerMeta, mcs).__new__(
-            mcs, name, bases, attrs)
-        identifier = converter_class.identifier()
-        if identifier:
-            mcs.registry[identifier] = converter_class
-        return converter_class
-
-
-class FieldTransformer(six.with_metaclass(object)):
-    """Functionality for transforming tastypie ApiField to a graphene field."""
-
-    _tastypie_field_dehydrated_type = None
-    _tastypie_field_is_m2m = False
+class FieldTransformer(object):
     _graphene_type = None
 
-    def __init__(self, tastypie_field):
-        self._tastypie_field = tastypie_field
-
-    @classmethod
-    def identifier(cls):
-        if cls._tastypie_field_dehydrated_type:
-            return (
-                cls._tastypie_field_dehydrated_type,
-                cls._tastypie_field_is_m2m,
-            )
+    def __init__(self, field):
+        self._field = field
 
     @abstractmethod
     def graphene_field(self):
@@ -90,10 +78,10 @@ class FieldTransformer(six.with_metaclass(object)):
         return JSONResolver(self._graphene_field_name())
 
     def _graphene_field_name(self):
-        return self._tastypie_field.instance_name
+        return self._field.field_name
 
     def _graphene_field_required(self):
-        return not self._tastypie_field.null
+        return not self._field.allow_null
 
 
 class ScalarValuedFieldTransformer(FieldTransformer):
@@ -137,37 +125,30 @@ class RelatedValuedFieldTransformer(FieldTransformer):
 
 class StringValuedFieldTransformer(ScalarValuedFieldTransformer):
     _graphene_type = graphene.String
-    _tastypie_field_dehydrated_type = 'string'
 
 
 class IntegerValuedFieldTransformer(ScalarValuedFieldTransformer):
     _graphene_type = graphene.Int
-    _tastypie_field_dehydrated_type = 'integer'
 
 
 class FloatValuedFieldTransformer(ScalarValuedFieldTransformer):
     _graphene_type = graphene.Float
-    _tastypie_field_dehydrated_type = 'float'
 
 
 class BooleanValuedFieldTransformer(ScalarValuedFieldTransformer):
     _graphene_type = graphene.Boolean
-    _tastypie_field_dehydrated_type = 'boolean'
 
 
 class DateValuedFieldTransformer(ScalarValuedFieldTransformer):
     _graphene_type = graphene.String
-    _tastypie_field_dehydrated_type = 'date'
 
 
 class DatetimeValuedFieldTransformer(ScalarValuedFieldTransformer):
     _graphene_type = graphene.String
-    _tastypie_field_dehydrated_type = 'datetime'
 
 
 class TimeValuedFieldTransformer(ScalarValuedFieldTransformer):
     _graphene_type = graphene.String
-    _tastypie_field_dehydrated_type = 'time'
 
 
 class UnicodeCompatibleDecimal(Decimal):
@@ -188,7 +169,6 @@ class UnicodeCompatibleDecimal(Decimal):
 
 class DecimalValuedFieldTransformer(ScalarValuedFieldTransformer):
     _graphene_type = UnicodeCompatibleDecimal
-    _tastypie_field_dehydrated_type = 'decimal'
 
 
 class Dict(graphene.Scalar):
@@ -202,12 +182,10 @@ class Dict(graphene.Scalar):
 
 class DictValuedFieldTransformer(ScalarValuedFieldTransformer):
     _graphene_type = Dict
-    _tastypie_field_dehydrated_type = 'dict'
 
 
 class ListValuedFieldTransformer(FieldTransformer):
     _graphene_type = GenericScalar
-    _tastypie_field_dehydrated_type = 'list'
 
     def graphene_field(self):
         return graphene.List(

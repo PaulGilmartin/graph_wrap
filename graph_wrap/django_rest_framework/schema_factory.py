@@ -55,13 +55,14 @@ class SchemaFactory(object):
         for endpoint in api_endpoints:
             _, method, view_callback = endpoint
             view = generator.create_view(view_callback, method)
-            views.append(view)
+            if cls._usable_viewset(view):
+                views.append(view)
         return cls(views).create()
 
     @staticmethod
     def _usable_viewset(viewset):
-        # Should we use this?
-        return issubclass(viewset, viewsets.ModelViewSet)
+        # Can we relax this condition at all?
+        return isinstance(viewset, viewsets.ModelViewSet)
 
     def create(self):
         query_class_attrs = dict()
@@ -80,7 +81,7 @@ class QueryAttributes(object):
     def __init__(self, api):
         self._resource = api
         self.graphene_type = transform_api(api)
-        self._single_item_field_name = api._meta.resource_name
+        self._single_item_field_name = api.basename
         self._all_items_field_name = 'all_{}s'.format(
             self._single_item_field_name)
         self._single_item_resolver_name = 'resolve_{}'.format(
