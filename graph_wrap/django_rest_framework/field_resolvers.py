@@ -64,6 +64,32 @@ class QueryResolver(GrapheneFieldResolver):
         )
         # consider using threads to dynamically update the class,
         # e.g. simple history?
+        """
+        What we need:
+         - To ensure that we fire get_request at self._api
+           such that only the fields defined by selected_fields
+           are serialized. This needs to be done recursively,
+           ensuring that nested related resources only
+           serialize the corresponding nested selected fields.
+         - We need to "fire the request" in as close a way as
+           possible to traditional DRF - seems like using the
+           callback returned by as_view might be the best option.
+           
+         - We need a way to edit the fields coming from the
+           serializer on the viewset. Some options:
+           
+           1. Dynamically build a super class, S, of self._api.__class__
+              which pops the appropriate fields in the __init__ 
+              method (using the input request). Then set self._api.serializer_class = S. 
+              Pros: 
+                - Should be thread safe as setting on self._api (the instance)
+                - Code a bit more readable than mutating a method.
+              Cons: 
+                - Overrides the class so could fail type checks
+           2. Mutate _selectable_fields_mutator as below
+              
+        
+        """
         resource_response = rest_resolver_method(get_request)
         if resource_response.status_code in (
                 300, 307, 400, 401, 403, 404, 405, 500):

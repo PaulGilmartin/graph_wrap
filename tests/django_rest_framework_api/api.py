@@ -19,6 +19,7 @@ class PostSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
+
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
 
