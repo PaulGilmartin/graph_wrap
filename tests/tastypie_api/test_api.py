@@ -60,6 +60,38 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
             all_authors_data,
         )
 
+    def test_all_authors_all_posts_query(self):
+        query = '''
+            query {
+                all_authors {
+                    name
+                }
+                all_posts {
+                    content
+                }
+            }
+            '''
+        body = {"query": query}
+        request_json = json.dumps(body)
+        response = self.client.post(
+            self.graphql_endpoint,
+            request_json,
+            content_type="application/json",
+        )
+        self.assertHttpOK(response)
+        all_authors_data = json.loads(
+            response.content)['data']['all_authors']
+        self.assertEqual(
+            [{'name': 'Paul'}, {'name': 'Scott'}],
+            all_authors_data,
+        )
+        all_post_data = json.loads(
+            response.content)['data']['all_posts']
+        self.assertEqual(
+            [{'content': 'My first post!'}],
+            all_post_data,
+        )
+
     def test_all_authors_query_with_orm_filters_argument(self):
         query = '''
             query {

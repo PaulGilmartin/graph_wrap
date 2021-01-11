@@ -22,7 +22,7 @@ class PostResource(ModelResource):
     files = fields.ManyToManyField('tests.tastypie_api.api.MediaResource', attribute='files')
     date = fields.DateTimeField('date')
     rating = fields.DecimalField('rating', null=True)
-    title = fields.CharField('title')
+    content = fields.CharField('content')
 
     class Meta:
         queryset = Post.objects.all()
