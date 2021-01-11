@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import copy
 from abc import abstractmethod
 
 import json
@@ -49,17 +50,16 @@ class QueryResolver(GrapheneFieldResolver):
         self._api = api
 
     @classmethod
-    def rest_resource_resolver_method(cls, resource_adapter, **kwargs):
+    def rest_api_resolver_method(cls, resource_adapter, **kwargs):
         pass
 
     def __call__(self, root, info, **kwargs):
         get_request = transform_graphql_resolve_info(
             self._field_name, info, **kwargs)
-        self._api.get_serializer()     #  can we bind a custom get_serializer here to filter fields?
-        selectable_fields_resource = _selectable_fields_mutator(
+        selectable_fields_api = _selectable_fields_mutator(
             self._api)
-        rest_resolver_method = self.rest_resource_resolver_method(
-            selectable_fields_resource,
+        rest_resolver_method = self.rest_api_resolver_method(
+            selectable_fields_api,
             **kwargs
         )
         resource_response = rest_resolver_method(get_request)
@@ -86,8 +86,8 @@ class AllItemsQueryResolver(QueryResolver):
         response_json
 
     @classmethod
-    def rest_resource_resolver_method(cls, resource_adapter, **kwargs):
-        pass
+    def rest_api_resolver_method(cls, api, **kwargs):
+        return getattr(api, 'dispatch')
 
 
 class SingleItemQueryResolver(QueryResolver):
@@ -103,7 +103,7 @@ class SingleItemQueryResolver(QueryResolver):
     """
 
     @classmethod
-    def rest_resource_resolver_method(cls, resource_adapter, **kwargs):
+    def rest_api_resolver_method(cls, api, **kwargs):
         pass
 
 
@@ -130,5 +130,18 @@ def _selectable_fields_mutator(api):
         field implementation (e.g. should work with custom
         field types/ custom views).
      """
-    pass
+    api = copy.deepcopy(api)
+    api.get_serializer = _selectable_fields_get_serializer.__get__(api)
+    return api
 
+
+def _selectable_fields_get_serializer(api, *args, **kwargs):
+    serializer = api.get_serializer(*args, **kwargs)
+    selected_fields = api.request.environ.get('selected_fields', [])
+    all_fields = copy.deepcopy(selected_fields.fields.items())
+    for field_name, field in all_fields:
+        # if field is related:
+        #     pass
+        if field_name not in selected_fields:
+            serializer.fields.pop(field_name)
+    return serializer

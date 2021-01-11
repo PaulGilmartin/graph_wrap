@@ -59,3 +59,10 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
             [{'name': 'Paul'}, {'name': 'Scott'}],
             all_authors_data,
         )
+
+    def test_get_rest_api(self):
+        response = self.client.get(
+            '/django_rest/author/',
+            content_type="application/json",
+        )
+        self.assertHttpOK(response)
