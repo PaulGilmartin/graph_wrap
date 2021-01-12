@@ -4,6 +4,8 @@ import copy
 from abc import abstractmethod
 
 import json
+
+from rest_framework.renderers import JSONRenderer
 from tastypie.exceptions import BadRequest
 
 from graph_wrap.graphql_transformer import transform_graphql_resolve_info
@@ -90,12 +92,13 @@ class QueryResolver(GrapheneFieldResolver):
               
         
         """
-        resource_response = rest_resolver_method(get_request)
-        if resource_response.status_code in (
-                300, 307, 400, 401, 403, 404, 405, 500):
-            raise BadRequest(resource_response.content)
+        view_func = self._api.__class__.as_view({'get': 'list'})
+        response = view_func(get_request).render()
+        # if response.status_code in (
+        #         300, 307, 400, 401, 403, 404, 405, 500):
+        #     raise BadRequest(response.content)
         response_json = json.loads(
-            resource_response.content or '{}')
+            response.content or '{}')
         return response_json
 
 
@@ -111,7 +114,7 @@ class AllItemsQueryResolver(QueryResolver):
     def __call__(self, root, info, **kwargs):
         response_json = super(AllItemsQueryResolver, self).__call__(
             root, info, **kwargs)
-        response_json
+        return response_json
 
     @classmethod
     def rest_api_resolver_method(cls, api, **kwargs):
@@ -158,8 +161,8 @@ def _selectable_fields_mutator(api):
         field implementation (e.g. should work with custom
         field types/ custom views).
      """
-    api = copy.deepcopy(api)
-    api.get_serializer = _selectable_fields_get_serializer.__get__(api)
+    # api = copy.deepcopy(api)
+    # api.get_serializer = _selectable_fields_get_serializer.__get__(api)
     return api
 
 

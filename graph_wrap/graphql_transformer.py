@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from django.core.handlers.wsgi import WSGIRequest
 # Remember directives
+from rest_framework.request import clone_request
 
 
 def transform_graphql_resolve_info(
@@ -29,7 +30,9 @@ class GraphQLResolveInfoTransformer(object):
          a POST request originally pointed at graphql endpoint),
          to the appropriate  GET request for a REST endpoint.
          """
-        # TODO: Get correct path info for request - see Api.top_level
+        # TODO: Get correct path info for request
+        # Cannot use clone_request directly as it uses django
+        # Request object
         environ = self._request.environ
         environ_overrides = dict(
             REQUEST_METHOD='GET',
@@ -39,6 +42,7 @@ class GraphQLResolveInfoTransformer(object):
         environ.update(environ_overrides)
         get_request = WSGIRequest(environ)
         get_request.user = self._request.user
+        get_request.content_type = self._request.content_type
         return get_request
 
     def transform_resolve_info(self):

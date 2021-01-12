@@ -36,10 +36,11 @@ class SchemaFactory(object):
     @classmethod
     def create_from_api(cls, api):
         """
-        Create a schema from the DRF viewset instance.
+        Create a schema from the DRF router instance.
 
         Can pass either the full python path of the API
-        instance or an Api instance itself.
+        instance or an router instance itself.
+        - Shouldnt need this now?
         """
         from rest_framework.schemas.generators import EndpointEnumerator
         from rest_framework.schemas.generators import BaseSchemaGenerator
@@ -56,7 +57,13 @@ class SchemaFactory(object):
             _, method, view_callback = endpoint
             view = generator.create_view(view_callback, method)
             if cls._usable_viewset(view):
-                views.append(view)
+                for method, action in view.action_map.items():
+                    # We might not need to bother setting actions?
+                    if method == 'get':
+                        handler = getattr(view, action)
+                        setattr(view, method, handler)
+                        if cls._usable_viewset(view):
+                            views.append(view)
         return cls(views).create()
 
     @staticmethod
