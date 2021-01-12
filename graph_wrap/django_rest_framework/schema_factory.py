@@ -28,6 +28,7 @@ class SchemaFactory(object):
     resource which does not satisfy this condition will
     be silently filtered.
     """
+    # This isn't thread safe
     api_class_to_schema = dict()
 
     def __init__(self, apis):

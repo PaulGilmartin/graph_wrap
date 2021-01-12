@@ -37,7 +37,9 @@ def field_transformer(field):
     concrete FieldTransformer class for that field.
     """
     serializer_field_to_transformer = {
-        serializers.CharField: StringValuedFieldTransformer}
+        serializers.CharField: StringValuedFieldTransformer,
+        serializers.HyperlinkedRelatedField: RelatedValuedFieldTransformer,
+    }
     try:
         transformer_class = serializer_field_to_transformer[
             field.__class__]
@@ -99,15 +101,14 @@ class ScalarValuedFieldTransformer(FieldTransformer):
 
 
 class RelatedValuedFieldTransformer(FieldTransformer):
-    """Functionality for transforming a 'related' valued tastypie field."""
-    _tastypie_field_dehydrated_type = 'related'
-
-    def __init__(self, tastypie_field):
-        super(RelatedValuedFieldTransformer, self).__init__(tastypie_field)
-        self._resource_class = tastypie_field.to_class
+    """Functionality for transforming a 'related' field."""
+    def __init__(self, field):
+        super(RelatedValuedFieldTransformer, self).__init__(field)
+        self._field_class = field.__class__
+        self._is_to_many = False  # how to determine?
 
     def graphene_field(self):
-        wrapper = graphene.List if self._tastypie_field_is_m2m else graphene.Field
+        wrapper = graphene.List if self._is_to_many else graphene.Field
         return wrapper(
             self._graphene_type,
             name=self._graphene_field_name(),
@@ -119,6 +120,9 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         from .schema_factory import SchemaFactory
         # Needs to be lazy since at this point the related
         # type may not yet have been created
+        # This isn't thread safe. We can probably pass through
+        # the SchemaFactory instance to this point
+        # and have api_class_to_schema as a instance attr.
         return lambda: SchemaFactory.api_class_to_schema[
             self._resource_class]
 

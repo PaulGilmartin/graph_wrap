@@ -15,8 +15,7 @@ class AuthorSerializer(serializers.HyperlinkedModelSerializer):
 class PostSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Post
-        fields = ['content']
-
+        fields = ['content', 'author']
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
