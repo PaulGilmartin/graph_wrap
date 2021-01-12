@@ -88,7 +88,7 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
 
     def test_get_rest_api(self):
         response = self.client.get(
-            '/django_rest/author/',
+            '/django_rest/post/',
             content_type="application/json",
         )
         self.assertHttpOK(response)
