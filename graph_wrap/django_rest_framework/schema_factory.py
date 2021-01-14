@@ -75,8 +75,26 @@ class SchemaFactory(object):
     def create(self):
         query_class_attrs = dict()
         for api in self._apis:
+            """
+            Here api is a DRF viewset. The related fields might not necessarily
+            correspond to views. For such fields, can we build an object type
+            which is then *not* part of the Query? 
+            These can be added via the optional 'types' argument to 
+            graphene.Schema. Open questions:
+             - How will we name them? {model}_type might interfere with
+               how we name the viewsets?
+             - Will the recursive nature of having to define types
+               like this mean this gets too slow?
+             - How can we actually build them? If the fields are
+               NestedSerializer instances then we have something to
+               go by. Maybe we can dynamically make them nested by
+               adding a depth? Need to be careful to remove that, and
+               might not be thread safe?
+            
+            """
             query_attributes = QueryAttributes(api)
             query_class_attrs.update(**query_attributes.to_dict())
+            view_name = api.get_view_name()
             self.api_class_to_schema[api.__class__] = (
                 query_attributes.graphene_type)
         Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)

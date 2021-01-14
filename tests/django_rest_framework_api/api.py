@@ -11,8 +11,12 @@ class AuthorSerializer(serializers.HyperlinkedModelSerializer):
         model = Author
         fields = ['name']
 
-
-class PostSerializer(serializers.HyperlinkedModelSerializer):
+"""
+We mighht need to limit to objects which inherit from 
+serializers.HyperlinkedModelSerializer. Otherwise we don't have a
+view?
+"""
+class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ['content', 'author']

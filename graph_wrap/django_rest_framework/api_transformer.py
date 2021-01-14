@@ -124,7 +124,7 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         # the SchemaFactory instance to this point
         # and have api_class_to_schema as a instance attr.
         return lambda: SchemaFactory.api_class_to_schema[
-            self._resource_class]
+            self._field.view_name]
 
 
 class StringValuedFieldTransformer(ScalarValuedFieldTransformer):
