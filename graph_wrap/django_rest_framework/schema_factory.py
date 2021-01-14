@@ -90,6 +90,7 @@ class SchemaFactory(object):
                go by. Maybe we can dynamically make them nested by
                adding a depth? Need to be careful to remove that, and
                might not be thread safe?
+               See https://stackoverflow.com/questions/9541025/how-to-copy-a-python-class
             
             """
             query_attributes = QueryAttributes(api)
