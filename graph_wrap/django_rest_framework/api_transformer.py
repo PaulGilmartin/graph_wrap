@@ -16,19 +16,39 @@ from graph_wrap.django_rest_framework.field_resolvers import JSONResolver
 class ApiTransformer(object):
     def __init__(self, api):
         self._api = api
-        self._serializer = api.get_serializer()
+        self._root_serializer = api.get_serializer()
         # This will exist as a type referenced on the root Query
-        self._graphene_type_name = u'{}_type'.format(self._api.basename)
+        self._root_graphene_type_name = u'{}_type'.format(self._api.basename)
+        self._all_serializers = []
 
     def transform(self):
-        pass
+        graphene_type_data = []
+        self._collect_nested_serializers(self._root_serializer)
+        root_serializer, *nested_serializers = self._all_serializers
+        root_transformed = SerializerTransformer(
+            root_serializer,
+            self._root_graphene_type_name,
+            root_query_type=True,
+        ).transform()
+        graphene_type_data.append(root_transformed)
+        for nested in nested_serializers:
+            nested_transformed = SerializerTransformer(nested).transform()
+            graphene_type_data.append(nested_transformed)
+        return graphene_type_data
+
+    def _collect_nested_serializers(self, serializer):
+        for field in serializer.fields.items():
+            if hasattr(field, 'fields'):
+                nested_serializer = field
+                self._collect_nested_serializers(
+                    nested_serializer)
+        self._all_serializers.append(serializer)
 
 
 class SerializerTransformer(object):
     def __init__(
             self,
             serializer,
-            graphene_object_types=None,
             graphene_type_name='',
             root_query_type=False,
     ):
@@ -43,37 +63,27 @@ class SerializerTransformer(object):
         self._graphene_type_name = graphene_type_name or (
             'from_{}_model_type'.format(self._model_name))
         self._root_query_type = root_query_type
-        self._graphene_object_types = (
-            [] if graphene_object_types is None else graphene_object_types)
         self._graphene_object_type_class_attrs = dict()
 
     def transform(self):
-        for field in self._serializer.fields.items():
-            if hasattr(field, 'fields'):
-                nested_serializer = field
-                self.__class__(
-                    nested_serializer,
-                    graphene_object_types=self._graphene_object_types,
-
-                ).transform()
+        for field in self._serializer.fields.values():
             self._add_field_data(field)
         graphene_type = type(
             str(self._graphene_type_name),
             (ObjectType,),
             self._graphene_object_type_class_attrs,
         )
-        self._graphene_object_types.append({
+
+        return {
             'graphene_object_type': graphene_type,
             'root_query_type': self._root_query_type,
-            }
-        )
-        return self._graphene_object_types
+        }
 
     def _add_field_data(self, field):
         field_transformer = FieldTransformer.get_transformer(field)
         graphene_field, resolver_method = list(
             field_transformer.transform().items())[0]
-        resolver_method_name = 'resolve_{}'.format(field.name)
+        resolver_method_name = 'resolve_{}'.format(field.field_name)
         self._graphene_object_type_class_attrs[resolver_method_name] = (
             resolver_method)
 
@@ -240,61 +250,61 @@ class ToManyRelatedValuedFieldTransformer(RelatedValuedFieldTransformer):
 
 
 
-def transform_api(api):
-    # api is a view set instance
-    graphene_type_name = api.basename + '_type'  # Does basename limit the view type?
-    serializer = api.get_serializer()
-    return transform_serializer(serializer, graphene_type_name=graphene_type_name)
+# def transform_api(api):
+#     # api is a view set instance
+#     graphene_type_name = api.basename + '_type'  # Does basename limit the view type?
+#     serializer = api.get_serializer()
+#     return transform_serializer(serializer, graphene_type_name=graphene_type_name)
 
-
-def transform_serializer(serializer, graphene_type_name=None):
-    class_attrs = dict()
-
-    graphene_type_name = graphene_type_name or 'from_{}_model_type'.format(
-        serializer.Meta.model.__name__.lower())
-
-    for field_name, field in serializer.fields.items():# .fields limits to views or viewsets?
-        transform_field(field, field_name, class_attrs=class_attrs)
-    graphene_type = type(
-        str(graphene_type_name),
-        (ObjectType,),
-        class_attrs,
-    )
-    return graphene_type
-
-
-def transform_field(field, field_name, class_attrs=None):
-    class_attrs = dict() if class_attrs is None else class_attrs
-
-    transformer = field_transformer(field)
-    class_attrs[field_name] = transformer.graphene_field()
-    resolver_method_name = 'resolve_{}'.format(field_name)
-    class_attrs[resolver_method_name] = (
-        transformer.graphene_field_resolver_method())
-
-
-def field_transformer(field, class_attrs=None):
-    """Instantiate the appropriate FieldTransformer class.
-
-    This acts as a factory-type function, which, given
-    a tastypie field as input, instantiates the appropriate
-    concrete FieldTransformer class for that field.
-    """
-    class_attrs = dict() if class_attrs is None else class_attrs
-    if hasattr(field, 'fields'):
-        # Safe to assume this is a serializer?
-        for field_name, field in field.fields.items():
-            transform_field(field, field_name, class_attrs)
-
-    serializer_field_to_transformer = {
-        serializers.CharField: StringValuedFieldTransformer,
-        serializers.IntegerField: IntegerValuedFieldTransformer,
-        serializers.HyperlinkedRelatedField: RelatedValuedFieldTransformer,
-    }
-    try:
-        transformer_class = serializer_field_to_transformer[
-            field.__class__]
-    except KeyError:
-        raise KeyError('Field type not recognized')
-    return transformer_class(field)
-
+#
+# def transform_serializer(serializer, graphene_type_name=None):
+#     class_attrs = dict()
+#
+#     graphene_type_name = graphene_type_name or 'from_{}_model_type'.format(
+#         serializer.Meta.model.__name__.lower())
+#
+#     for field_name, field in serializer.fields.items():# .fields limits to views or viewsets?
+#         transform_field(field, field_name, class_attrs=class_attrs)
+#     graphene_type = type(
+#         str(graphene_type_name),
+#         (ObjectType,),
+#         class_attrs,
+#     )
+#     return graphene_type
+#
+#
+# def transform_field(field, field_name, class_attrs=None):
+#     class_attrs = dict() if class_attrs is None else class_attrs
+#
+#     transformer = field_transformer(field)
+#     class_attrs[field_name] = transformer.graphene_field()
+#     resolver_method_name = 'resolve_{}'.format(field_name)
+#     class_attrs[resolver_method_name] = (
+#         transformer.graphene_field_resolver_method())
+#
+#
+# def field_transformer(field, class_attrs=None):
+#     """Instantiate the appropriate FieldTransformer class.
+#
+#     This acts as a factory-type function, which, given
+#     a tastypie field as input, instantiates the appropriate
+#     concrete FieldTransformer class for that field.
+#     """
+#     class_attrs = dict() if class_attrs is None else class_attrs
+#     if hasattr(field, 'fields'):
+#         # Safe to assume this is a serializer?
+#         for field_name, field in field.fields.items():
+#             transform_field(field, field_name, class_attrs)
+#
+#     serializer_field_to_transformer = {
+#         serializers.CharField: StringValuedFieldTransformer,
+#         serializers.IntegerField: IntegerValuedFieldTransformer,
+#         serializers.HyperlinkedRelatedField: RelatedValuedFieldTransformer,
+#     }
+#     try:
+#         transformer_class = serializer_field_to_transformer[
+#             field.__class__]
+#     except KeyError:
+#         raise KeyError('Field type not recognized')
+#     return transformer_class(field)
+#

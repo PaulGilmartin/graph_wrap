@@ -8,7 +8,7 @@ from .field_resolvers import (
     AllItemsQueryResolver,
     SingleItemQueryResolver,
 )
-from .api_transformer import transform_api
+from .api_transformer import ApiTransformer
 
 
 class SchemaFactory(object):
@@ -93,6 +93,7 @@ class SchemaFactory(object):
                See https://stackoverflow.com/questions/9541025/how-to-copy-a-python-class
             
             """
+            transformed_api = ApiTransformer(api).transform()
             query_attributes = QueryAttributes(api)
             query_class_attrs.update(**query_attributes.to_dict())
             self.api_class_to_schema[api.__class__] = (
