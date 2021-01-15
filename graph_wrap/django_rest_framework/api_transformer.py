@@ -12,15 +12,20 @@ from graph_wrap.django_rest_framework.field_resolvers import JSONResolver
 
 
 def transform_api(api):
-    class_attrs = dict()
+    # api is a view set instance
     graphene_type_name = api.basename + '_type'  # Does basename limit the view type?
     serializer = api.get_serializer()
+    return transform_serializer(serializer, graphene_type_name=graphene_type_name)
+
+
+def transform_serializer(serializer, graphene_type_name=None):
+    class_attrs = dict()
+
+    graphene_type_name = graphene_type_name or 'from_{}_model_type'.format(
+        serializer.Meta.model.__name__.lower())
+
     for field_name, field in serializer.fields.items():# .fields limits to views or viewsets?
-        transformer = field_transformer(field)
-        class_attrs[field_name] = transformer.graphene_field()
-        resolver_method_name = 'resolve_{}'.format(field_name)
-        class_attrs[resolver_method_name] = (
-            transformer.graphene_field_resolver_method())
+        transform_field(field, field_name, class_attrs=class_attrs)
     graphene_type = type(
         str(graphene_type_name),
         (ObjectType,),
@@ -29,15 +34,32 @@ def transform_api(api):
     return graphene_type
 
 
-def field_transformer(field):
+def transform_field(field, field_name, class_attrs=None):
+    class_attrs = dict() if class_attrs is None else class_attrs
+
+    transformer = field_transformer(field)
+    class_attrs[field_name] = transformer.graphene_field()
+    resolver_method_name = 'resolve_{}'.format(field_name)
+    class_attrs[resolver_method_name] = (
+        transformer.graphene_field_resolver_method())
+
+
+def field_transformer(field, class_attrs=None):
     """Instantiate the appropriate FieldTransformer class.
 
     This acts as a factory-type function, which, given
     a tastypie field as input, instantiates the appropriate
     concrete FieldTransformer class for that field.
     """
+    class_attrs = dict() if class_attrs is None else class_attrs
+    if hasattr(field, 'fields'):
+        # Safe to assume this is a serializer?
+        for field_name, field in field.fields.items():
+            transform_field(field, field_name, class_attrs)
+
     serializer_field_to_transformer = {
         serializers.CharField: StringValuedFieldTransformer,
+        serializers.IntegerField: IntegerValuedFieldTransformer,
         serializers.HyperlinkedRelatedField: RelatedValuedFieldTransformer,
     }
     try:
@@ -46,24 +68,6 @@ def field_transformer(field):
     except KeyError:
         raise KeyError('Field type not recognized')
     return transformer_class(field)
-
-#
-# class FieldTransformerMeta(type):
-#     registry = dict()
-#
-#     def __new__(mcs, name, bases, attrs):
-#         """Automatically adds each FieldTransformer class into a registry.
-#
-#         Upon class definition/compilation of a FieldTransformer subclass,
-#         transform_cls, the registry dictionary is populated with a key:value
-#         pair of the form transform_cls.identifier(): transform_cls.
-#         """
-#         converter_class = super(FieldTransformerMeta, mcs).__new__(
-#             mcs, name, bases, attrs)
-#         identifier = converter_class.identifier()
-#         if identifier:
-#             mcs.registry[identifier] = converter_class
-#         return converter_class
 
 
 class FieldTransformer(object):

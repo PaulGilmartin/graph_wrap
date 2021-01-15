@@ -95,7 +95,6 @@ class SchemaFactory(object):
             """
             query_attributes = QueryAttributes(api)
             query_class_attrs.update(**query_attributes.to_dict())
-            view_name = api.get_view_name()
             self.api_class_to_schema[api.__class__] = (
                 query_attributes.graphene_type)
         Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)
