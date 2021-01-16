@@ -94,10 +94,14 @@ class SchemaFactory(object):
             
             """
             transformed_api = ApiTransformer(api).transform()
-            query_attributes = QueryAttributes(api)
+            root_data = next(t for t in transformed_api if t['root_query_type'])
+            query_attributes = QueryAttributes(api, root_data['graphene_object_type'])
             query_class_attrs.update(**query_attributes.to_dict())
-            self.api_class_to_schema[api.__class__] = (
+            non_query_types = [t['graphene_object_type'] for t in transformed_api if not t['root_query_type']]
+            self.api_class_to_schema[api.basename] = (
                 query_attributes.graphene_type)
+            for non_query_type in non_query_types:
+                self.api_class_to_schema[non_query_type._field.field_name] = non_query_type
         Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)
         return graphene.Schema(query=Query)
 
@@ -105,9 +109,9 @@ class SchemaFactory(object):
 class QueryAttributes(object):
     """Create the graphene Query class attributes relevant to a resource."""
 
-    def __init__(self, api):
+    def __init__(self, api, graphene_type):
         self._api = api
-        self.graphene_type = transform_api(api)
+        self.graphene_type = graphene_type
         self._single_item_field_name = api.basename
         self._all_items_field_name = 'all_{}s'.format(
             self._single_item_field_name)

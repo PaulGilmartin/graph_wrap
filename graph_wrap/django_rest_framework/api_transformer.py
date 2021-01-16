@@ -37,12 +37,12 @@ class ApiTransformer(object):
         return graphene_type_data
 
     def _collect_nested_serializers(self, serializer):
-        for field in serializer.fields.items():
+        for _field_name, field in serializer.fields.items():
             if hasattr(field, 'fields'):
                 nested_serializer = field
                 self._collect_nested_serializers(
                     nested_serializer)
-        self._all_serializers.append(serializer)
+        self._all_serializers.insert(0, serializer)
 
 
 class SerializerTransformer(object):
@@ -97,14 +97,16 @@ class FieldTransformer(object):
     @classmethod
     def get_transformer(cls, field):
         serializer_field_to_transformer = {
-            serializers.CharField: StringValuedFieldTransformer,
-            serializers.IntegerField: IntegerValuedFieldTransformer,
-            serializers.HyperlinkedRelatedField: RelatedValuedFieldTransformer,
+            'CharField': StringValuedFieldTransformer,
+            'IntegerField': IntegerValuedFieldTransformer,
+            'HyperlinkedRelatedField': RelatedValuedFieldTransformer, # shouldn't need this if we have full depth?
+            'NestedSerializer': RelatedValuedFieldTransformer,
         }
         try:
             transformer_class = serializer_field_to_transformer[
-                field.__class__]
+                field.__class__.__name__]
         except KeyError:
+
             raise KeyError('Field type not recognized')
         return transformer_class(field)
 
@@ -166,7 +168,7 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         # the SchemaFactory instance to this point
         # and have api_class_to_schema as a instance attr.
         return lambda: SchemaFactory.api_class_to_schema[
-            self._field.view_name]
+            (self._field.field_name, self._field.parent)]
 
 
 class StringValuedFieldTransformer(ScalarValuedFieldTransformer):
@@ -247,64 +249,3 @@ class ToOneRelatedValuedFieldTransformer(RelatedValuedFieldTransformer):
 
 class ToManyRelatedValuedFieldTransformer(RelatedValuedFieldTransformer):
     _tastypie_field_is_m2m = True
-
-
-
-# def transform_api(api):
-#     # api is a view set instance
-#     graphene_type_name = api.basename + '_type'  # Does basename limit the view type?
-#     serializer = api.get_serializer()
-#     return transform_serializer(serializer, graphene_type_name=graphene_type_name)
-
-#
-# def transform_serializer(serializer, graphene_type_name=None):
-#     class_attrs = dict()
-#
-#     graphene_type_name = graphene_type_name or 'from_{}_model_type'.format(
-#         serializer.Meta.model.__name__.lower())
-#
-#     for field_name, field in serializer.fields.items():# .fields limits to views or viewsets?
-#         transform_field(field, field_name, class_attrs=class_attrs)
-#     graphene_type = type(
-#         str(graphene_type_name),
-#         (ObjectType,),
-#         class_attrs,
-#     )
-#     return graphene_type
-#
-#
-# def transform_field(field, field_name, class_attrs=None):
-#     class_attrs = dict() if class_attrs is None else class_attrs
-#
-#     transformer = field_transformer(field)
-#     class_attrs[field_name] = transformer.graphene_field()
-#     resolver_method_name = 'resolve_{}'.format(field_name)
-#     class_attrs[resolver_method_name] = (
-#         transformer.graphene_field_resolver_method())
-#
-#
-# def field_transformer(field, class_attrs=None):
-#     """Instantiate the appropriate FieldTransformer class.
-#
-#     This acts as a factory-type function, which, given
-#     a tastypie field as input, instantiates the appropriate
-#     concrete FieldTransformer class for that field.
-#     """
-#     class_attrs = dict() if class_attrs is None else class_attrs
-#     if hasattr(field, 'fields'):
-#         # Safe to assume this is a serializer?
-#         for field_name, field in field.fields.items():
-#             transform_field(field, field_name, class_attrs)
-#
-#     serializer_field_to_transformer = {
-#         serializers.CharField: StringValuedFieldTransformer,
-#         serializers.IntegerField: IntegerValuedFieldTransformer,
-#         serializers.HyperlinkedRelatedField: RelatedValuedFieldTransformer,
-#     }
-#     try:
-#         transformer_class = serializer_field_to_transformer[
-#             field.__class__]
-#     except KeyError:
-#         raise KeyError('Field type not recognized')
-#     return transformer_class(field)
-#
