@@ -21,6 +21,7 @@ class ApiTransformer(object):
         self._collect_nested_serializers(self._root_serializer)
         self._root_serializer, *self._nested_serializers = self._all_serializers
         self._root_graphene_type_name = u'{}_type'.format(self._api.basename)
+        self.type_mapping = dict()
 
     def root_type(self):
         root_types = SerializerTransformer(
