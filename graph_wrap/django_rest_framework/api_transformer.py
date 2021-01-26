@@ -17,24 +17,24 @@ class ApiTransformer(object):
     def __init__(self, api):
         self._api = api
         self._root_serializer = api.get_serializer()
-        # This will exist as a type referenced on the root Query
-        self._root_graphene_type_name = u'{}_type'.format(self._api.basename)
         self._all_serializers = []
-
-    def transform(self):
-        graphene_type_data = []
         self._collect_nested_serializers(self._root_serializer)
-        root_serializer, *nested_serializers = self._all_serializers
-        root_transformed = SerializerTransformer(
-            root_serializer,
+        self._root_serializer, *self._nested_serializers = self._all_serializers
+        self._root_graphene_type_name = u'{}_type'.format(self._api.basename)
+
+    def root_type(self):
+        root_types = SerializerTransformer(
+            self._root_serializer,
             self._root_graphene_type_name,
-            root_query_type=True,
         ).transform()
-        graphene_type_data.append(root_transformed)
-        for nested in nested_serializers:
+        return root_types
+
+    def non_root_types(self):
+        non_root_types = []
+        for nested in self._nested_serializers:
             nested_transformed = SerializerTransformer(nested).transform()
-            graphene_type_data.append(nested_transformed)
-        return graphene_type_data
+            non_root_types.append(nested_transformed)
+        return non_root_types
 
     def _collect_nested_serializers(self, serializer):
         for _field_name, field in serializer.fields.items():
@@ -50,7 +50,6 @@ class SerializerTransformer(object):
             self,
             serializer,
             graphene_type_name='',
-            root_query_type=False,
     ):
         self._serializer = serializer
         self._model_name = self._serializer.Meta.model.__name__.lower()
@@ -62,7 +61,6 @@ class SerializerTransformer(object):
         # would we name that?
         self._graphene_type_name = graphene_type_name or (
             'from_{}_model_type'.format(self._model_name))
-        self._root_query_type = root_query_type
         self._graphene_object_type_class_attrs = dict()
 
     def transform(self):
@@ -73,11 +71,10 @@ class SerializerTransformer(object):
             (ObjectType,),
             self._graphene_object_type_class_attrs,
         )
+        # can we collect the field identifiers here and add them
+        # to dict in schema factory?
 
-        return {
-            'graphene_object_type': graphene_type,
-            'root_query_type': self._root_query_type,
-        }
+        return graphene_type
 
     def _add_field_data(self, field):
         field_transformer = FieldTransformer.get_transformer(field)
@@ -93,6 +90,8 @@ class FieldTransformer(object):
 
     def __init__(self, field):
         self._field = field
+        self.identifier = (
+            self._field.field_name, self._field.parent)
 
     @classmethod
     def get_transformer(cls, field):
@@ -153,11 +152,12 @@ class RelatedValuedFieldTransformer(FieldTransformer):
 
     def _graphene_field(self):
         wrapper = graphene.List if self._is_to_many else graphene.Field
-        return wrapper(
+        graphene_field = wrapper(
             self._graphene_type,
             name=self._graphene_field_name(),
             required=self._graphene_field_required(),
         )
+        return graphene_field
 
     @property
     def _graphene_type(self):
@@ -167,8 +167,8 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         # This isn't thread safe. We can probably pass through
         # the SchemaFactory instance to this point
         # and have api_class_to_schema as a instance attr.
-        return lambda: SchemaFactory.api_class_to_schema[
-            (self._field.field_name, self._field.parent)]
+        return lambda: SchemaFactory.graphene_type_mapping[
+            self.identifier]
 
 
 class StringValuedFieldTransformer(ScalarValuedFieldTransformer):

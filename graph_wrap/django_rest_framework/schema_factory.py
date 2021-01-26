@@ -29,7 +29,7 @@ class SchemaFactory(object):
     be silently filtered.
     """
     # This isn't thread safe
-    api_class_to_schema = dict()
+    graphene_type_mapping = dict()
 
     def __init__(self, apis):
         self._apis = apis
@@ -93,17 +93,25 @@ class SchemaFactory(object):
                See https://stackoverflow.com/questions/9541025/how-to-copy-a-python-class
             
             """
-            transformed_api = ApiTransformer(api).transform()
-            root_data = next(t for t in transformed_api if t['root_query_type'])
-            query_attributes = QueryAttributes(api, root_data['graphene_object_type'])
+            api_transformer = ApiTransformer(api)
+            root_type = api_transformer.root_type()
+            query_attributes = QueryAttributes(api, root_type)
             query_class_attrs.update(**query_attributes.to_dict())
-            non_query_types = [t['graphene_object_type'] for t in transformed_api if not t['root_query_type']]
-            self.api_class_to_schema[api.basename] = (
-                query_attributes.graphene_type)
-            for non_query_type in non_query_types:
-                self.api_class_to_schema[non_query_type._field.field_name] = non_query_type
+            non_root_types = api_transformer.non_root_types()
+            for graphene_object_type in [root_type] + non_root_types:
+                if hasattr(graphene_object_type, 'transformer_identifier'):
+                    self.graphene_type_mapping[
+                        graphene_object_type.transformer_identifier] = graphene_object_type
+                    del graphene_object_type.transformer_identifier
         Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)
-        return graphene.Schema(query=Query)
+        return graphene.Schema(query=Query, types=non_root_types)
+
+
+# non_query_types = [t['graphene_object_type'] for t in transformed_api if not t['root_query_type']]
+# self.graphene_type_mapping[api.basename] = (
+#     query_attributes.graphene_type)
+# for non_query_type in non_query_types:
+#     self.graphene_type_mapping[non_query_type._field.field_name] = non_query_type
 
 
 class QueryAttributes(object):
