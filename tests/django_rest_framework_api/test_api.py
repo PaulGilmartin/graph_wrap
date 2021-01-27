@@ -40,6 +40,13 @@ class TestGraphWrapBase(ResourceTestCaseMixin, TransactionTestCase):
 
 
 class TestSchemaFactory(TestGraphWrapBase):
+    """
+    Next things to consider:
+    1. How to dynamically set 'depth' so we have nested serializers.
+    2. Testing for depth>1.
+    3. Test field attributes - e.g. to_many, required (later any filter args).
+    4. Test using custom serializers as fields.
+    """
     def setUp(self):
         super(TestSchemaFactory, self).setUp()
         self.schema = SchemaFactory.create_from_api()
