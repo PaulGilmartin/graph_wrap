@@ -7,12 +7,13 @@ from tastypie.test import ResourceTestCaseMixin
 
 from django.test import TransactionTestCase
 
+from graph_wrap.django_rest_framework.schema_factory import SchemaFactory
 from tests.models import Author, Post, Media
 
 
-class TestApi(ResourceTestCaseMixin, TransactionTestCase):
+class TestGraphWrapBase(ResourceTestCaseMixin, TransactionTestCase):
     def setUp(self):
-        super(TestApi, self).setUp()
+        super(TestGraphWrapBase, self).setUp()
         self.graphql_endpoint = '/django_rest/graphql/'
         self.picture = Media.objects.create(
             name='elephant',
@@ -37,6 +38,21 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
 
         self.scott = Author.objects.create(name='Scott', age='28')
 
+
+class TestSchemaFactory(TestGraphWrapBase):
+    def setUp(self):
+        super(TestSchemaFactory, self).setUp()
+        self.schema = SchemaFactory.create_from_api()
+        self.query = self.schema.get_query_type()
+
+    def test_query_fields(self):
+        self.assertEqual(
+            {'author', 'all_authors', 'post', 'all_posts'},
+            set(self.query.fields),
+        )
+
+
+class TestGraphWrapApi(TestGraphWrapBase):
     def test_all_authors_query(self):
         query = '''
             query {
@@ -64,7 +80,7 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
         query = '''
             query {
                 all_posts {
-                    title
+                    content
                     author {
                         name
                     }

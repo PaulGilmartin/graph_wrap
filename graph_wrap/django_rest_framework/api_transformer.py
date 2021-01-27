@@ -28,14 +28,14 @@ class ApiTransformer(object):
             self._root_serializer,
             self.type_mapping,
             self._root_graphene_type_name,
-        ).transform()
+        ).graphene_object_type()
         return root_type
 
     def non_root_types(self):
         non_root_types = []
         for nested in self._nested_serializers:
             nested_transformed = SerializerTransformer(
-                nested, self.type_mapping).transform()
+                nested, self.type_mapping).graphene_object_type()
             non_root_types.append(nested_transformed)
             self.type_mapping[(nested.field_name, nested.parent)] = nested_transformed
         return non_root_types
@@ -66,10 +66,10 @@ class SerializerTransformer(object):
         # serializer which doesn't come from the root query? How
         # would we name that?
         self._graphene_type_name = graphene_type_name or (
-            'from_{}_model_type'.format(self._model_name))
+            'nested_{}_type'.format(self._model_name))
         self._graphene_object_type_class_attrs = dict()
 
-    def transform(self):
+    def graphene_object_type(self):
         for field in self._serializer.fields.values():
             self._add_field_data(field)
         graphene_type = type(
@@ -77,18 +77,15 @@ class SerializerTransformer(object):
             (ObjectType,),
             self._graphene_object_type_class_attrs,
         )
-        # can we collect the field identifiers here and add them
-        # to dict in schema factory?
-
         return graphene_type
 
     def _add_field_data(self, field):
         field_transformer = FieldTransformer.get_transformer(field, self.type_mapping)
-        graphene_field, resolver_method = list(
-            field_transformer.transform().items())[0]
+        graphene_field = field_transformer.graphene_field()
+        self._graphene_object_type_class_attrs[field.field_name] = graphene_field
         resolver_method_name = 'resolve_{}'.format(field.field_name)
         self._graphene_object_type_class_attrs[resolver_method_name] = (
-            resolver_method)
+            field_transformer.graphene_field_resolver_method())
 
 
 class FieldTransformer(object):
@@ -112,21 +109,13 @@ class FieldTransformer(object):
             transformer_class = serializer_field_to_transformer[
                 field.__class__.__name__]
         except KeyError:
-
             raise KeyError('Field type not recognized')
         return transformer_class(field, type_mapping)
 
-    def transform(self):
-        return {
-            'graphene_field': self._graphene_field(),
-            'graphene_field_resolver_method': (
-                self._graphene_field_resolver_method()),
-        }
-
-    def _graphene_field(self):
+    def graphene_field(self):
         pass
 
-    def _graphene_field_resolver_method(self):
+    def graphene_field_resolver_method(self):
         return JSONResolver(self._graphene_field_name())
 
     def _graphene_field_name(self):
@@ -143,10 +132,11 @@ class ScalarValuedFieldTransformer(FieldTransformer):
     subclass of RelatedField.
     """
 
-    def _graphene_field(self):
+    def graphene_field(self):
         return self._graphene_type(
             name=self._graphene_field_name(),
             required=self._graphene_field_required(),
+            resolver=self.graphene_field_resolver_method(),
         )
 
 
@@ -157,12 +147,13 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         self._field_class = field.__class__
         self._is_to_many = False  # how to determine?
 
-    def _graphene_field(self):
+    def graphene_field(self):
         wrapper = graphene.List if self._is_to_many else graphene.Field
         graphene_field = wrapper(
             self._graphene_type,
             name=self._graphene_field_name(),
             required=self._graphene_field_required(),
+            resolver=self.graphene_field_resolver_method(),
         )
         return graphene_field
 
@@ -246,6 +237,7 @@ class ListValuedFieldTransformer(FieldTransformer):
             self._graphene_type,
             name=self._graphene_field_name(),
             required=self._graphene_field_required(),
+            resolver=self.graphene_field_resolver_method(),
         )
 
 

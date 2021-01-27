@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
-
+from rest_framework.schemas.generators import EndpointEnumerator
+from rest_framework.schemas.generators import BaseSchemaGenerator
 import graphene
 from graphene_django.settings import perform_import
 from rest_framework import viewsets
@@ -28,14 +29,11 @@ class SchemaFactory(object):
     resource which does not satisfy this condition will
     be silently filtered.
     """
-    # This isn't thread safe
-    graphene_type_mapping = dict()
-
     def __init__(self, apis):
         self._apis = apis
 
     @classmethod
-    def create_from_api(cls, api):
+    def create_from_api(cls, api=None):  # remove api arg when tastypie onboarded
         """
         Create a schema from the DRF router instance.
 
@@ -43,9 +41,6 @@ class SchemaFactory(object):
         instance or an router instance itself.
         - Shouldnt need this now?
         """
-        from rest_framework.schemas.generators import EndpointEnumerator
-        from rest_framework.schemas.generators import BaseSchemaGenerator
-
         # This should actually eliminate the need to pass
         # in a router at all (and hence define any
         # extra config). Works in background
@@ -102,20 +97,9 @@ class SchemaFactory(object):
             query_attributes = QueryAttributes(api, root_type)
             query_class_attrs.update(**query_attributes.to_dict())
             non_root_types = api_transformer.non_root_types()
-            for graphene_object_type in [root_type] + non_root_types:
-                if hasattr(graphene_object_type, 'transformer_identifier'):
-                    self.graphene_type_mapping[
-                        graphene_object_type.transformer_identifier] = graphene_object_type
-                    del graphene_object_type.transformer_identifier
         Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)
-        return graphene.Schema(query=Query, types=non_root_types)
-
-
-# non_query_types = [t['graphene_object_type'] for t in transformed_api if not t['root_query_type']]
-# self.graphene_type_mapping[api.basename] = (
-#     query_attributes.graphene_type)
-# for non_query_type in non_query_types:
-#     self.graphene_type_mapping[non_query_type._field.field_name] = non_query_type
+        schema = graphene.Schema(query=Query, types=non_root_types)
+        return schema
 
 
 class QueryAttributes(object):
