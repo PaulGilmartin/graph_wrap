@@ -16,7 +16,18 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ['content', 'author']
-        depth=1
+        depth = 1
+
+"""
+PostSerializer(context={'request': None, 'format': None, 'view': <tests.django_rest_framework_api.api.PostViewSet object>}):
+    content = CharField(style={'base_template': 'textarea.html'})
+    author = NestedSerializer(read_only=True):
+        id = IntegerField(label='ID', read_only=True)
+        name = CharField(style={'base_template': 'textarea.html'})
+        age = CharField(style={'base_template': 'textarea.html'})
+
+
+"""
 
 
 class AuthorViewSet(viewsets.ModelViewSet):

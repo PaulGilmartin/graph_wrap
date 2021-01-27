@@ -24,17 +24,20 @@ class ApiTransformer(object):
         self.type_mapping = dict()
 
     def root_type(self):
-        root_types = SerializerTransformer(
+        root_type = SerializerTransformer(
             self._root_serializer,
+            self.type_mapping,
             self._root_graphene_type_name,
         ).transform()
-        return root_types
+        return root_type
 
     def non_root_types(self):
         non_root_types = []
         for nested in self._nested_serializers:
-            nested_transformed = SerializerTransformer(nested).transform()
+            nested_transformed = SerializerTransformer(
+                nested, self.type_mapping).transform()
             non_root_types.append(nested_transformed)
+            self.type_mapping[(nested.field_name, nested.parent)] = nested_transformed
         return non_root_types
 
     def _collect_nested_serializers(self, serializer):
@@ -50,10 +53,12 @@ class SerializerTransformer(object):
     def __init__(
             self,
             serializer,
+            type_mapping,
             graphene_type_name='',
     ):
         self._serializer = serializer
         self._model_name = self._serializer.Meta.model.__name__.lower()
+        self.type_mapping = type_mapping
         # If not graphene_type_name not passed in explicitly, we assume
         # the serializer comes from the 'NestedSerializer' DRF class
         # (which is built dynamically from a nested related model field).
@@ -78,7 +83,7 @@ class SerializerTransformer(object):
         return graphene_type
 
     def _add_field_data(self, field):
-        field_transformer = FieldTransformer.get_transformer(field)
+        field_transformer = FieldTransformer.get_transformer(field, self.type_mapping)
         graphene_field, resolver_method = list(
             field_transformer.transform().items())[0]
         resolver_method_name = 'resolve_{}'.format(field.field_name)
@@ -89,13 +94,14 @@ class SerializerTransformer(object):
 class FieldTransformer(object):
     _graphene_type = None
 
-    def __init__(self, field):
+    def __init__(self, field, type_mapping):
         self._field = field
         self.identifier = (
             self._field.field_name, self._field.parent)
+        self.type_mapping = type_mapping
 
     @classmethod
-    def get_transformer(cls, field):
+    def get_transformer(cls, field, type_mapping):
         serializer_field_to_transformer = {
             'CharField': StringValuedFieldTransformer,
             'IntegerField': IntegerValuedFieldTransformer,
@@ -108,7 +114,7 @@ class FieldTransformer(object):
         except KeyError:
 
             raise KeyError('Field type not recognized')
-        return transformer_class(field)
+        return transformer_class(field, type_mapping)
 
     def transform(self):
         return {
@@ -146,8 +152,8 @@ class ScalarValuedFieldTransformer(FieldTransformer):
 
 class RelatedValuedFieldTransformer(FieldTransformer):
     """Functionality for transforming a 'related' field."""
-    def __init__(self, field):
-        super(RelatedValuedFieldTransformer, self).__init__(field)
+    def __init__(self, field, type_mapping):
+        super(RelatedValuedFieldTransformer, self).__init__(field, type_mapping)
         self._field_class = field.__class__
         self._is_to_many = False  # how to determine?
 
@@ -168,8 +174,7 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         # This isn't thread safe. We can probably pass through
         # the SchemaFactory instance to this point
         # and have api_class_to_schema as a instance attr.
-        return lambda: SchemaFactory.graphene_type_mapping[
-            self.identifier]
+        return lambda: self.type_mapping[self.identifier]
 
 
 class StringValuedFieldTransformer(ScalarValuedFieldTransformer):
