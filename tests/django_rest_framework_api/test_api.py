@@ -43,9 +43,11 @@ class TestSchemaFactory(TestGraphWrapBase):
     """
     Next things to consider:
     1. How to dynamically set 'depth' so we have nested serializers.
+     (Done? Need to build up API more in terms of nested layers before can confirm)
     2. Testing for depth>1.
     3. Test field attributes - e.g. to_many, required (later any filter args).
     4. Test using custom serializers as fields.
+    5. Test all field types.
     """
     def setUp(self):
         super(TestSchemaFactory, self).setUp()

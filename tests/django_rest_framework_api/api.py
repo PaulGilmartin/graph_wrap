@@ -10,13 +10,13 @@ class AuthorSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Author
         fields = ['name']
+        depth = 1
 
 
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ['content', 'author']
-        depth = 1
 
 """
 PostSerializer(context={'request': None, 'format': None, 'view': <tests.django_rest_framework_api.api.PostViewSet object>}):

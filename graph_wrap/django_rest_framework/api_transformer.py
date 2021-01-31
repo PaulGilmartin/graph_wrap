@@ -8,7 +8,6 @@ import graphene
 import six
 from graphene import ObjectType
 from graphene.types.generic import GenericScalar
-from rest_framework import serializers
 
 from graph_wrap.django_rest_framework.field_resolvers import JSONResolver
 
@@ -41,12 +40,28 @@ class ApiTransformer(object):
         return non_root_types
 
     def _collect_nested_serializers(self, serializer):
+        serializer = self._set_depth(serializer)
         for _field_name, field in serializer.fields.items():
             if hasattr(field, 'fields'):
                 nested_serializer = field
                 self._collect_nested_serializers(
                     nested_serializer)
         self._all_serializers.insert(0, serializer)
+
+    def _set_depth(self, serializer):
+        """Dynamically set a 'depth' on serializer Meta.
+
+        In order to be able to generate the full nested
+        representation required by a GraphQL api,
+        we utilise the 'depth' argument of a DRF serializer's
+        Meta class.
+        """
+        meta_cls = serializer.Meta
+        meta_copy_cls = type(
+            'Meta', meta_cls.__bases__, dict(meta_cls.__dict__))
+        meta_copy_cls.depth = 10  # Max. depth permitted by DRF
+        serializer.Meta = meta_copy_cls
+        return serializer
 
 
 class SerializerTransformer(object):
@@ -86,6 +101,7 @@ class SerializerTransformer(object):
         resolver_method_name = 'resolve_{}'.format(field.field_name)
         self._graphene_object_type_class_attrs[resolver_method_name] = (
             field_transformer.graphene_field_resolver_method())
+
 
 
 class FieldTransformer(object):
