@@ -5,7 +5,8 @@ from django.db import models
 
 class Author(models.Model):
     name = models.TextField()
-    age = models.IntegerField()
+    age = models.IntegerField(null=True)
+    active = models.BooleanField(default=True)
 
 
 class Post(models.Model):

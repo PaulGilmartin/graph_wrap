@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import datetime
 import json
 
+from graphql import GraphQLScalarType, GraphQLNonNull
 from tastypie.test import ResourceTestCaseMixin
 
 from django.test import TransactionTestCase
@@ -68,13 +69,25 @@ class TestSchemaFactory(TestGraphWrapBase):
             set(author_type.fields),
         )
 
+    def test_nested_author_type(self):
+        author_type = self.type_map['nested_author_type']
+        self.assertEqual(
+            {'id', 'name', 'age', 'active'},
+            set(author_type.fields),
+        )
+        age_field = author_type.fields['age']
+        self.assertEqual(
+            GraphQLScalarType, age_field.type.__class__)
+        active_field = author_type.fields['active']
+        self.assertEqual(
+            GraphQLNonNull, active_field.type.__class__)
+
     def test_post_type(self):
         author_type = self.type_map['post_type']
         self.assertEqual(
             {'content', 'date', 'author', 'rating'},
             set(author_type.fields),
         )
-
 
 
 class TestGraphWrapApi(TestGraphWrapBase):
