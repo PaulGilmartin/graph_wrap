@@ -1,15 +1,11 @@
 from __future__ import unicode_literals
 
-
 import json
-from decimal import Decimal
-
 import graphene
-import six
 from graphene import ObjectType
 from graphene.types.generic import GenericScalar
-
 from graph_wrap.django_rest_framework.field_resolvers import JSONResolver
+import six
 
 
 class ApiTransformer(object):
@@ -95,7 +91,8 @@ class SerializerTransformer(object):
         return graphene_type
 
     def _add_field_data(self, field):
-        field_transformer = FieldTransformer.get_transformer(field, self.type_mapping)
+        field_transformer = FieldTransformer.get_transformer(
+            field, self.type_mapping)
         graphene_field = field_transformer.graphene_field()
         self._graphene_object_type_class_attrs[field.field_name] = graphene_field
         resolver_method_name = 'resolve_{}'.format(field.field_name)
@@ -124,8 +121,10 @@ class FieldTransformer:
             'DictField': DictValuedFieldTransformer,
             'HStoreField': DictValuedFieldTransformer,
             'JSONField': DictValuedFieldTransformer,
+            'CharField': StringValuedFieldTransformer,
             'NestedSerializer': RelatedValuedFieldTransformer,
-        }
+        }  # should we fail if the field isn't there? Skip it?
+        # Can we make this easily extendable for clients?
         transformer_class = serializer_field_to_transformer.get(
             field.__class__.__name__, StringValuedFieldTransformer)
         return transformer_class(field, type_mapping)

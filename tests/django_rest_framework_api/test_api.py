@@ -47,7 +47,7 @@ class TestSchemaFactory(TestGraphWrapBase):
      (Done? Need to build up API more in terms of nested layers before can confirm)
     2. Testing for depth>1.
     3. Test field attributes - e.g. to_many, required (later any filter args).
-    4. Test using custom serializers as fields.
+    4. Test using custom serializers as fields (both which are views and not)
     5. Test all field types.
     """
     def setUp(self):
@@ -83,10 +83,10 @@ class TestSchemaFactory(TestGraphWrapBase):
             GraphQLNonNull, active_field.type.__class__)
 
     def test_post_type(self):
-        author_type = self.type_map['post_type']
+        post_type = self.type_map['post_type']
         self.assertEqual(
-            {'content', 'date', 'author', 'rating'},
-            set(author_type.fields),
+            {'content', 'date', 'author', 'rating', 'files'},
+            set(post_type.fields),
         )
 
 
