@@ -134,7 +134,7 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
         self.assertHttpOK(response)
         author_data = json.loads(response.content)['data']['author']
         self.assertEqual(
-            {'name': 'Scott', 'age': '28'},
+            {'name': 'Scott', 'age': 28},
             author_data,
         )
 

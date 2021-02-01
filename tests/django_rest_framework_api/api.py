@@ -9,25 +9,14 @@ from tests.models import Author, Post
 class AuthorSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Author
-        fields = ['name']
+        fields = ['name', 'age']
         depth = 1
 
 
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
-        fields = ['content', 'author']
-
-"""
-PostSerializer(context={'request': None, 'format': None, 'view': <tests.django_rest_framework_api.api.PostViewSet object>}):
-    content = CharField(style={'base_template': 'textarea.html'})
-    author = NestedSerializer(read_only=True):
-        id = IntegerField(label='ID', read_only=True)
-        name = CharField(style={'base_template': 'textarea.html'})
-        age = CharField(style={'base_template': 'textarea.html'})
-
-
-"""
+        fields = ['content', 'author', 'date', 'rating']
 
 
 class AuthorViewSet(viewsets.ModelViewSet):

@@ -103,8 +103,7 @@ class SerializerTransformer(object):
             field_transformer.graphene_field_resolver_method())
 
 
-
-class FieldTransformer(object):
+class FieldTransformer:
     _graphene_type = None
 
     def __init__(self, field, type_mapping):
@@ -116,16 +115,19 @@ class FieldTransformer(object):
     @classmethod
     def get_transformer(cls, field, type_mapping):
         serializer_field_to_transformer = {
-            'CharField': StringValuedFieldTransformer,
+            'BooleanField': BooleanValuedFieldTransformer,
+            'NullBooleanField': BooleanValuedFieldTransformer,
             'IntegerField': IntegerValuedFieldTransformer,
-            'HyperlinkedRelatedField': RelatedValuedFieldTransformer, # shouldn't need this if we have full depth?
+            'FloatField': FloatValuedFieldTransformer,
+            'DecimalField': DecimalValuedFieldTransformer,
+            'ListField': ListValuedFieldTransformer,
+            'DictField': DictValuedFieldTransformer,
+            'HStoreField': DictValuedFieldTransformer,
+            'JSONField': DictValuedFieldTransformer,
             'NestedSerializer': RelatedValuedFieldTransformer,
         }
-        try:
-            transformer_class = serializer_field_to_transformer[
-                field.__class__.__name__]
-        except KeyError:
-            raise KeyError('Field type not recognized')
+        transformer_class = serializer_field_to_transformer.get(
+            field.__class__.__name__, StringValuedFieldTransformer)
         return transformer_class(field, type_mapping)
 
     def graphene_field(self):
@@ -175,12 +177,8 @@ class RelatedValuedFieldTransformer(FieldTransformer):
 
     @property
     def _graphene_type(self):
-        from .schema_factory import SchemaFactory
         # Needs to be lazy since at this point the related
         # type may not yet have been created
-        # This isn't thread safe. We can probably pass through
-        # the SchemaFactory instance to this point
-        # and have api_class_to_schema as a instance attr.
         return lambda: self.type_mapping[self.identifier]
 
 
@@ -200,36 +198,8 @@ class BooleanValuedFieldTransformer(ScalarValuedFieldTransformer):
     _graphene_type = graphene.Boolean
 
 
-class DateValuedFieldTransformer(ScalarValuedFieldTransformer):
-    _graphene_type = graphene.String
-
-
-class DatetimeValuedFieldTransformer(ScalarValuedFieldTransformer):
-    _graphene_type = graphene.String
-
-
-class TimeValuedFieldTransformer(ScalarValuedFieldTransformer):
-    _graphene_type = graphene.String
-
-
-class UnicodeCompatibleDecimal(Decimal):
-    """
-    The `Decimal` scalar type represents a python Decimal.
-    """
-
-    @staticmethod
-    def serialize(dec):
-        if isinstance(dec, six.string_types):
-            dec = graphene.Decimal(dec)
-        assert isinstance(
-            dec, graphene.Decimal), 'Received not compatible Decimal "{}"'.format(
-            repr(dec)
-        )
-        return str(dec)
-
-
 class DecimalValuedFieldTransformer(ScalarValuedFieldTransformer):
-    _graphene_type = UnicodeCompatibleDecimal
+    _graphene_type = graphene.Decimal
 
 
 class Dict(graphene.Scalar):

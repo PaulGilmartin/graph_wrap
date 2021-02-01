@@ -53,12 +53,28 @@ class TestSchemaFactory(TestGraphWrapBase):
         super(TestSchemaFactory, self).setUp()
         self.schema = SchemaFactory.create_from_api()
         self.query = self.schema.get_query_type()
+        self.type_map = self.schema.get_type_map()
 
     def test_query_fields(self):
         self.assertEqual(
             {'author', 'all_authors', 'post', 'all_posts'},
             set(self.query.fields),
         )
+
+    def test_author_type(self):
+        author_type = self.type_map['author_type']
+        self.assertEqual(
+            {'name', 'age'},
+            set(author_type.fields),
+        )
+
+    def test_post_type(self):
+        author_type = self.type_map['post_type']
+        self.assertEqual(
+            {'content', 'date', 'author', 'rating'},
+            set(author_type.fields),
+        )
+
 
 
 class TestGraphWrapApi(TestGraphWrapBase):
