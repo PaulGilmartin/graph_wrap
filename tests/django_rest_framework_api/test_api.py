@@ -49,6 +49,8 @@ class TestSchemaFactory(TestGraphWrapBase):
     3. Test field attributes - e.g. to_many, required (later any filter args).
     4. Test using custom serializers as fields (both which are views and not)
     5. Test all field types.
+
+    NEXT: get M2M fields working
     """
     def setUp(self):
         super(TestSchemaFactory, self).setUp()
