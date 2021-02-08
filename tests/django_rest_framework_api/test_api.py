@@ -43,6 +43,7 @@ class TestGraphWrapBase(ResourceTestCaseMixin, TransactionTestCase):
 class TestSchemaFactory(TestGraphWrapBase):
     """
     Next things to consider:
+    0. Don't dynamically set the depth!
     1. Test more layers of nesting (UserProfile model)
     3. Get required/non-null correct
     4. Test using custom serializers as fields (both which are views and not)
@@ -63,14 +64,7 @@ class TestSchemaFactory(TestGraphWrapBase):
     def test_author_type(self):
         author_type = self.type_map['author_type']
         self.assertEqual(
-            {'name', 'age'},
-            set(author_type.fields),
-        )
-
-    def test_nested_author_type(self):
-        author_type = self.type_map['nested_author_type']
-        self.assertEqual(
-            {'id', 'name', 'age', 'active'},
+            {'name', 'age', 'active'},
             set(author_type.fields),
         )
         age_field = author_type.fields['age']

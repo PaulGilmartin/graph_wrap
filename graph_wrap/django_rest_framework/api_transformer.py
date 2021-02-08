@@ -13,7 +13,7 @@ import six
 class ApiTransformer(object):
     def __init__(self, api):
         self._api = api
-        self._root_serializer = self._set_depth(api.get_serializer())
+        self._root_serializer = api.get_serializer()
         self._all_serializers = []
         self._collect_nested_serializers(self._root_serializer)
         self._root_serializer, *self._nested_serializers = self._all_serializers
@@ -34,19 +34,18 @@ class ApiTransformer(object):
             nested_transformed = SerializerTransformer(
                 nested, self.type_mapping).graphene_object_type()
             non_root_types.append(nested_transformed)
-            if isinstance(nested.parent, ListSerializer):
-                # For 'to many' fields
-                list_serializer = nested.parent
-                self.type_mapping[
-                    (list_serializer.field_name,
-                     list_serializer.parent)] = nested_transformed
-            else:
-                self.type_mapping[
-                    (nested.field_name, nested.parent)] = nested_transformed
+            # if isinstance(nested.parent, ListSerializer):
+            #     # For 'to many' fields
+            #     list_serializer = nested.parent
+            #     self.type_mapping[
+            #         (list_serializer.field_name,
+            #          list_serializer.parent)] = nested_transformed
+            # else:
+            self.type_mapping[
+                (nested.field_name, nested.parent)] = nested_transformed
         return non_root_types
 
     def _collect_nested_serializers(self, serializer):
-        serializer = self._set_depth(serializer)
         for _field_name, field in serializer.fields.items():
             nested_serializer = self._get_nested_serializer(field)
             if nested_serializer:
@@ -60,21 +59,6 @@ class ApiTransformer(object):
         elif hasattr(field, 'child'):
             return field.child
         return None
-
-    def _set_depth(self, serializer):
-        """Dynamically set a 'depth' on serializer Meta.
-
-        In order to be able to generate the full nested
-        representation required by a GraphQL api,
-        we utilise the 'depth' argument of a DRF serializer's
-        Meta class.
-        """
-        meta_cls = serializer.Meta
-        meta_copy_cls = type(
-            'Meta', meta_cls.__bases__, dict(meta_cls.__dict__))
-        meta_copy_cls.depth = 10  # Max. depth permitted by DRF
-        serializer.Meta = meta_copy_cls
-        return serializer
 
 
 class SerializerTransformer(object):
@@ -139,6 +123,8 @@ class FieldTransformer:
             'HStoreField': DictValuedFieldTransformer,
             'JSONField': DictValuedFieldTransformer,
             'CharField': StringValuedFieldTransformer,
+            'RelatedField': StringValuedFieldTransformer,
+            'ManyRelatedField': ListOfStringsValuedFieldTransformer,
             'NestedSerializer': RelatedValuedFieldTransformer,
             'ListSerializer': RelatedValuedFieldTransformer,
         }  # should we fail if the field isn't there? Skip it?
@@ -235,7 +221,7 @@ class DictValuedFieldTransformer(ScalarValuedFieldTransformer):
 class ListValuedFieldTransformer(FieldTransformer):
     _graphene_type = GenericScalar
 
-    def _graphene_field(self):
+    def graphene_field(self):
         return graphene.List(
             self._graphene_type,
             name=self._graphene_field_name(),
@@ -244,9 +230,7 @@ class ListValuedFieldTransformer(FieldTransformer):
         )
 
 
-class ToOneRelatedValuedFieldTransformer(RelatedValuedFieldTransformer):
-    pass
+class ListOfStringsValuedFieldTransformer(
+        ListValuedFieldTransformer):
+    _graphene_type = graphene.String
 
-
-class ToManyRelatedValuedFieldTransformer(RelatedValuedFieldTransformer):
-    _tastypie_field_is_m2m = True
