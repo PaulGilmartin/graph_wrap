@@ -43,8 +43,8 @@ class TestGraphWrapBase(ResourceTestCaseMixin, TransactionTestCase):
 class TestSchemaFactory(TestGraphWrapBase):
     """
     Next things to consider:
-    0. Don't dynamically set the depth!
-    1. Test more layers of nesting (UserProfile model)
+    1. Test more layers of nesting
+       (add a FK to Author and set depth > 1. Also try with Post depth > 1)
     3. Get required/non-null correct
     4. Test using custom serializers as fields (both which are views and not)
     5. Test all field types (scalar + non-scalar)
