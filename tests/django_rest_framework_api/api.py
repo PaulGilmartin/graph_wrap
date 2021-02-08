@@ -16,13 +16,13 @@ from tests.models import Author, Post
 class AuthorSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Author
-        fields = ['name', 'age', 'active']
-        depth = 1
+        fields = ['name', 'age', 'active', 'profile_picture']
 
 
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
+        depth = 1  # set to depth =2 gives name collision on schema
         fields = [
             'content', 'author', 'date', 'rating', 'files']
 
@@ -39,6 +39,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
 """
 
+print(self.schema)
 schema {
   query: Query
 }
@@ -52,14 +53,29 @@ type Query {
 type author_type {
   name: String!
   age: Int
-}
-type post_type {
-  content: String!
-  author: String  # No depth defined on serializer, so don't set it. Only build nested rep if depth has been set or if custom serializer used.
-  date: String!
-  rating: Decimal
-  files: [String]!
+  active: Boolean!
+  profile_picture: String  # correct as author_type doesn't have a depth or use custom
 }
 
+type post_type {
+  content: String!
+  author: nested_author_type!
+  date: String!
+  rating: Decimal
+  files: [nested_media_type]!  # correct to generate nested as depth has been set
+}
+type nested_author_type {
+  id: Int!
+  name: String!
+  age: Int
+  active: Boolean!
+  profile_picture: String  # correct since this comes from the nested author in post, which only has depth 1
+}
+type nested_media_type {
+  id: Int!
+  name: String!
+  content_type: String!
+  size: Int!
+}
 
 """

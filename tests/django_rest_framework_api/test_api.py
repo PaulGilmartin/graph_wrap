@@ -64,7 +64,7 @@ class TestSchemaFactory(TestGraphWrapBase):
     def test_author_type(self):
         author_type = self.type_map['author_type']
         self.assertEqual(
-            {'name', 'age', 'active'},
+            {'name', 'age', 'active', 'profile_picture'},
             set(author_type.fields),
         )
         age_field = author_type.fields['age']

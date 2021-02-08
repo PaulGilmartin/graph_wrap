@@ -34,15 +34,15 @@ class ApiTransformer(object):
             nested_transformed = SerializerTransformer(
                 nested, self.type_mapping).graphene_object_type()
             non_root_types.append(nested_transformed)
-            # if isinstance(nested.parent, ListSerializer):
-            #     # For 'to many' fields
-            #     list_serializer = nested.parent
-            #     self.type_mapping[
-            #         (list_serializer.field_name,
-            #          list_serializer.parent)] = nested_transformed
-            # else:
-            self.type_mapping[
-                (nested.field_name, nested.parent)] = nested_transformed
+            if isinstance(nested.parent, ListSerializer):
+                # For 'to many' fields
+                list_serializer = nested.parent
+                self.type_mapping[
+                    (list_serializer.field_name,
+                     list_serializer.parent)] = nested_transformed
+            else:
+                self.type_mapping[
+                    (nested.field_name, nested.parent)] = nested_transformed
         return non_root_types
 
     def _collect_nested_serializers(self, serializer):
