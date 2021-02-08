@@ -4,6 +4,8 @@ import json
 import graphene
 from graphene import ObjectType
 from graphene.types.generic import GenericScalar
+from rest_framework.serializers import ListSerializer
+
 from graph_wrap.django_rest_framework.field_resolvers import JSONResolver
 import six
 
@@ -11,7 +13,7 @@ import six
 class ApiTransformer(object):
     def __init__(self, api):
         self._api = api
-        self._root_serializer = api.get_serializer()
+        self._root_serializer = self._set_depth(api.get_serializer())
         self._all_serializers = []
         self._collect_nested_serializers(self._root_serializer)
         self._root_serializer, *self._nested_serializers = self._all_serializers
@@ -32,17 +34,32 @@ class ApiTransformer(object):
             nested_transformed = SerializerTransformer(
                 nested, self.type_mapping).graphene_object_type()
             non_root_types.append(nested_transformed)
-            self.type_mapping[(nested.field_name, nested.parent)] = nested_transformed
+            if isinstance(nested.parent, ListSerializer):
+                # For 'to many' fields
+                list_serializer = nested.parent
+                self.type_mapping[
+                    (list_serializer.field_name,
+                     list_serializer.parent)] = nested_transformed
+            else:
+                self.type_mapping[
+                    (nested.field_name, nested.parent)] = nested_transformed
         return non_root_types
 
     def _collect_nested_serializers(self, serializer):
         serializer = self._set_depth(serializer)
         for _field_name, field in serializer.fields.items():
-            if hasattr(field, 'fields'):
-                nested_serializer = field
+            nested_serializer = self._get_nested_serializer(field)
+            if nested_serializer:
                 self._collect_nested_serializers(
                     nested_serializer)
         self._all_serializers.insert(0, serializer)
+
+    def _get_nested_serializer(self, field):
+        if hasattr(field, 'fields'):
+            return field
+        elif hasattr(field, 'child'):
+            return field.child
+        return None
 
     def _set_depth(self, serializer):
         """Dynamically set a 'depth' on serializer Meta.
@@ -123,6 +140,7 @@ class FieldTransformer:
             'JSONField': DictValuedFieldTransformer,
             'CharField': StringValuedFieldTransformer,
             'NestedSerializer': RelatedValuedFieldTransformer,
+            'ListSerializer': RelatedValuedFieldTransformer,
         }  # should we fail if the field isn't there? Skip it?
         # Can we make this easily extendable for clients?
         transformer_class = serializer_field_to_transformer.get(
@@ -162,7 +180,7 @@ class RelatedValuedFieldTransformer(FieldTransformer):
     def __init__(self, field, type_mapping):
         super(RelatedValuedFieldTransformer, self).__init__(field, type_mapping)
         self._field_class = field.__class__
-        self._is_to_many = False  # how to determine?
+        self._is_to_many = getattr(field, 'many', False)
 
     def graphene_field(self):
         wrapper = graphene.List if self._is_to_many else graphene.Field

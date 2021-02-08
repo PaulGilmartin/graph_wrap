@@ -43,14 +43,10 @@ class TestGraphWrapBase(ResourceTestCaseMixin, TransactionTestCase):
 class TestSchemaFactory(TestGraphWrapBase):
     """
     Next things to consider:
-    1. How to dynamically set 'depth' so we have nested serializers.
-     (Done? Need to build up API more in terms of nested layers before can confirm)
-    2. Testing for depth>1.
-    3. Test field attributes - e.g. to_many, required (later any filter args).
+    1. Test more layers of nesting (UserProfile model)
+    3. Get required/non-null correct
     4. Test using custom serializers as fields (both which are views and not)
-    5. Test all field types.
-
-    NEXT: get M2M fields working
+    5. Test all field types (scalar + non-scalar)
     """
     def setUp(self):
         super(TestSchemaFactory, self).setUp()
