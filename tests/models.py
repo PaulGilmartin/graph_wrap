@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from django.contrib.auth.models import User
 from django.db import models
 
 
@@ -10,6 +11,7 @@ class Media(models.Model):
 
 
 class Author(models.Model):
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
     name = models.TextField()
     age = models.IntegerField(null=True)
     active = models.BooleanField(default=True)

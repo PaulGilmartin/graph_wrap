@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import datetime
 import json
 
+from django.contrib.auth.models import User
 from graphql import GraphQLScalarType, GraphQLNonNull
 from tastypie.test import ResourceTestCaseMixin
 
@@ -26,7 +27,9 @@ class TestGraphWrapBase(ResourceTestCaseMixin, TransactionTestCase):
             content_type='jpg',
             size=60,
         )
-        self.paul = Author.objects.create(name='Paul', age='30')
+        paul_user = User.objects.create(password='1234', username='Paul')
+        self.paul = Author.objects.create(
+            name='Paul', age='30', user=paul_user)
         self.pauls_first_post = Post.objects.create(
             content='My first post!',
             author=self.paul,
@@ -37,17 +40,21 @@ class TestGraphWrapBase(ResourceTestCaseMixin, TransactionTestCase):
         self.pauls_first_post.files.add(self.second_picture)
         self.pauls_first_post.save()
 
-        self.scott = Author.objects.create(name='Scott', age='28')
+        scott_user = User.objects.create(password='1234', username='Scott')
+        self.scott = Author.objects.create(
+            name='Scott', age='28', user=scott_user)
 
 
 class TestSchemaFactory(TestGraphWrapBase):
     """
     Next things to consider:
-    1. Test more layers of nesting
-       (add a FK to Author and set depth > 1. Also try with Post depth > 1)
-    3. Get required/non-null correct
-    4. Test using custom serializers as fields (both which are views and not)
-    5. Test all field types (scalar + non-scalar)
+    1. More assertions on the current API.
+    2. More testing with custom serialiazers?
+    3. Test using custom serializers as fields (both which are views and not)
+    4. Get required/non-null correct
+    5. Custom 'dehyration' methods
+    6. Test all field types (scalar + non-scalar)
+    7. Integration test on localhost
     """
     def setUp(self):
         super(TestSchemaFactory, self).setUp()
@@ -64,7 +71,7 @@ class TestSchemaFactory(TestGraphWrapBase):
     def test_author_type(self):
         author_type = self.type_map['author_type']
         self.assertEqual(
-            {'name', 'age', 'active', 'profile_picture'},
+            {'name', 'age', 'active', 'profile_picture', 'user'},
             set(author_type.fields),
         )
         age_field = author_type.fields['age']

@@ -1,28 +1,37 @@
 from __future__ import unicode_literals
 
+from django.contrib.auth.models import User
 from rest_framework import serializers, viewsets
 
 from tests.models import Author, Post
 
 
-# Attach a user to this serializer with
-
-# class UserSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = User
-#         exclude = ('password',)
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        exclude = ('password',)
 
 
 class AuthorSerializer(serializers.HyperlinkedModelSerializer):
+    user = UserSerializer()
+
     class Meta:
         model = Author
-        fields = ['name', 'age', 'active', 'profile_picture']
+        fields = [
+            'name',
+            'age',
+            'active',
+            'profile_picture',
+            'user',
+        ]
 
 
 class PostSerializer(serializers.ModelSerializer):
+    author = AuthorSerializer()
+
     class Meta:
         model = Post
-        depth = 2
+        depth = 3
         fields = [
             'content',
             'author',
@@ -43,7 +52,6 @@ class PostViewSet(viewsets.ModelViewSet):
 
 
 """
-print(self.schema)
 schema {
   query: Query
 }
@@ -54,39 +62,48 @@ type Query {
   post(id: Int!): post_type
   all_posts: [post_type]
 }
-
-type post_type {
-  content: String!
-  author: post__author_type!
-  date: String!
-  rating: Decimal
-  files: [post__files_type]!
-}
 type author_type {
   name: String!
   age: Int
   active: Boolean!
   profile_picture: String
+  user: String!
 }
-
-type post__author_type {
-  id: Int!
-  name: String!
-  age: Int
-  active: Boolean!
-  profile_picture: author__profile_picture_type!
-}
-type author__profile_picture_type {
-  id: Int!
-  name: String!
-  content_type: String!
-  size: Int!
+type post_type {
+  content: String!
+  author: String!
+  date: String!
+  rating: Decimal
+  files: [post__files_type]!
 }
 type post__files_type {
   id: Int!
   name: String!
   content_type: String!
   size: Int!
+}
+
+type author__user_type {
+  id: Int!
+  last_login: String
+  is_superuser: Boolean!
+  username: String!
+  first_name: String!
+  last_name: String!
+  email: String!
+  is_staff: Boolean!
+  is_active: Boolean!
+  date_joined: String!
+  groups: [String]!
+  user_permissions: [String]!
+}
+
+type post__author_type {
+  name: String!
+  age: Int
+  active: Boolean!
+  profile_picture: String
+  user: String!
 }
 
 
