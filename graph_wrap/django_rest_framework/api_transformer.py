@@ -78,7 +78,7 @@ class SerializerTransformer(object):
         # serializer which doesn't come from the root query? How
         # would we name that?
         self._graphene_type_name = graphene_type_name or (
-            'nested_{}_type'.format(self._model_name))
+            self._build_graphene_type_name())
         self._graphene_object_type_class_attrs = dict()
 
     def graphene_object_type(self):
@@ -90,6 +90,14 @@ class SerializerTransformer(object):
             self._graphene_object_type_class_attrs,
         )
         return graphene_type
+
+    def _build_graphene_type_name(self):
+        if isinstance(self._serializer.parent, ListSerializer):
+            named_field = self._serializer.parent
+        else:
+            named_field = self._serializer
+        model = named_field.parent.Meta.model.__name__.lower()
+        return '{}__{}_type'.format(model, named_field.field_name)
 
     def _add_field_data(self, field):
         field_transformer = FieldTransformer.get_transformer(
