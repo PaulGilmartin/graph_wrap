@@ -67,7 +67,12 @@ type author_type {
   age: Int
   active: Boolean!
   profile_picture: String
-  # this is wrong. DRF gives the whole representation when we use a custom serializer.
+  # user this is wrong. DRF gives the whole representation when we use a custom serializer.
+  # We want this to be author__user_type. Currently this is conflicting:
+  # AssertionError: Found different types with the same name in the schema:
+  # author__user_type, author__user_type.
+  # Probably an issue with the other one coming from Post with depth. Why aren't they
+  # the same? different parents? can we get a better identifier?
   user: String!
 }
 type post_type {

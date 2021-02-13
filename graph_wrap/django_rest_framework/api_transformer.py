@@ -4,6 +4,7 @@ import json
 import graphene
 from graphene import ObjectType
 from graphene.types.generic import GenericScalar
+from rest_framework import serializers
 from rest_framework.serializers import ListSerializer
 
 from graph_wrap.django_rest_framework.field_resolvers import JSONResolver
@@ -120,25 +121,37 @@ class FieldTransformer:
 
     @classmethod
     def get_transformer(cls, field, type_mapping):
-        serializer_field_to_transformer = {
-            'BooleanField': BooleanValuedFieldTransformer,
-            'NullBooleanField': BooleanValuedFieldTransformer,
-            'IntegerField': IntegerValuedFieldTransformer,
-            'FloatField': FloatValuedFieldTransformer,
-            'DecimalField': DecimalValuedFieldTransformer,
-            'ListField': ListValuedFieldTransformer,
-            'DictField': DictValuedFieldTransformer,
-            'HStoreField': DictValuedFieldTransformer,
-            'JSONField': DictValuedFieldTransformer,
-            'CharField': StringValuedFieldTransformer,
-            'RelatedField': StringValuedFieldTransformer,
-            'ManyRelatedField': ListOfStringsValuedFieldTransformer,
-            'NestedSerializer': RelatedValuedFieldTransformer,
-            'ListSerializer': RelatedValuedFieldTransformer,
-        }  # should we fail if the field isn't there? Skip it?
-        # Can we make this easily extendable for clients?
-        transformer_class = serializer_field_to_transformer.get(
-            field.__class__.__name__, StringValuedFieldTransformer)
+        if isinstance(field, serializers.ModelSerializer):
+            transformer_class = RelatedValuedFieldTransformer
+        elif hasattr(field, 'child') and isinstance(
+                field.child, serializers.ModelSerializer):
+            # for ListSerializers from M2M fields
+            transformer_class = RelatedValuedFieldTransformer
+        else:
+            serializer_field_to_transformer = {
+                'BooleanField': BooleanValuedFieldTransformer,
+                'NullBooleanField': BooleanValuedFieldTransformer,
+                'IntegerField': IntegerValuedFieldTransformer,
+                'FloatField': FloatValuedFieldTransformer,
+                'DecimalField': DecimalValuedFieldTransformer,
+                'ListField': ListValuedFieldTransformer,
+                'DictField': DictValuedFieldTransformer,
+                'HStoreField': DictValuedFieldTransformer,
+                'JSONField': DictValuedFieldTransformer,
+                'CharField': StringValuedFieldTransformer,
+                'DateTimeField': StringValuedFieldTransformer,
+                'EmailField': StringValuedFieldTransformer,
+                'RelatedField': StringValuedFieldTransformer,
+                'HyperlinkedRelatedField': StringValuedFieldTransformer,
+                'ManyRelatedField': ListOfStringsValuedFieldTransformer,
+            }
+            # Can we make this easily extendable for clients?
+            try:
+                transformer_class = serializer_field_to_transformer[
+                    field.__class__.__name__]
+            except KeyError:
+                raise KeyError(
+                    '{} not a recognised field type'.format(field.__class__))
         return transformer_class(field, type_mapping)
 
     def graphene_field(self):
