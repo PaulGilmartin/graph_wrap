@@ -67,6 +67,7 @@ type author_type {
   age: Int
   active: Boolean!
   profile_picture: String
+  # this is wrong. DRF gives the whole representation when we use a custom serializer.
   user: String!
 }
 type post_type {
