@@ -27,14 +27,14 @@ class AuthorSerializer(serializers.ModelSerializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
-    author = AuthorSerializer()
+    written_by = AuthorSerializer()
 
     class Meta:
         model = Post
         depth = 3
         fields = [
             'content',
-            'author',
+            'written_by',
             'date',
             'rating',
             'files',
@@ -124,7 +124,7 @@ type user_type {
 
 type post_type {
   content: String!
-  author: author_type! 
+  written_by: author_type!  # incorrect as we have written_by_type and a distinct written_by_type
   date: String!
   rating: Decimal
   files: [post__files_type]  # only one not working as we have [post__files_type]!

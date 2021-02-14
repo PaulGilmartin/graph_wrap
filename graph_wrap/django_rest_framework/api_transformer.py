@@ -91,7 +91,8 @@ class SerializerTransformer(object):
             model = named_field.parent.Meta.model.__name__.lower()
             return '{}__{}_type'.format(model, named_field.field_name)
         else:
-            return '{}_type'.format(named_field.field_name)
+            return '{}_type'.format(
+                named_field.Meta.model.__name__.lower())
 
     def _add_field_data(self, field):
         field_transformer = FieldTransformer.get_transformer(
@@ -208,7 +209,8 @@ class RelatedValuedFieldTransformer(FieldTransformer):
             model = self._field.parent.Meta.model.__name__.lower()
             return '{}__{}_type'.format(model, self._field.field_name)
         else:
-            return '{}_type'.format(self._field.field_name)
+            model = self._field.Meta.model.__name__.lower()
+            return '{}_type'.format(model)
 
 
 class StringValuedFieldTransformer(ScalarValuedFieldTransformer):
