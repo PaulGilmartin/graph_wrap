@@ -12,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
         exclude = ('password',)
 
 
-class AuthorSerializer(serializers.HyperlinkedModelSerializer):
+class AuthorSerializer(serializers.ModelSerializer):
     user = UserSerializer()
 
     class Meta:
@@ -52,6 +52,43 @@ class PostViewSet(viewsets.ModelViewSet):
 
 
 """
+When we have a depth set, *depth does not apply to any custom serializers on nested representations*.
+e.g. In below a GET to /post, which has depth 3, would only give an 'id' for profile_picture.
+This is because the author = AuthorSerializer() stops the NestedSerializer. If we removed that,
+we'd geet the full rep of profile_picture
+
+class AuthorSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+
+    class Meta:
+        model = Author
+        fields = [
+            'name',
+            'age',
+            'active',
+            'profile_picture',
+            'user',
+        ]
+
+
+class PostSerializer(serializers.ModelSerializer):
+    author = AuthorSerializer()
+
+    class Meta:
+        model = Post
+        depth = 3
+        fields = [
+            'content',
+            'author',
+            'date',
+            'rating',
+            'files',
+        ]
+
+
+
+Expected:
+
 schema {
   query: Query
 }
@@ -62,34 +99,15 @@ type Query {
   post(id: Int!): post_type
   all_posts: [post_type]
 }
+
 type author_type {
   name: String!
   age: Int
   active: Boolean!
   profile_picture: String
-  # user this is wrong. DRF gives the whole representation when we use a custom serializer.
-  # We want this to be author__user_type. Currently this is conflicting:
-  # AssertionError: Found different types with the same name in the schema:
-  # author__user_type, author__user_type.
-  # Probably an issue with the other one coming from Post with depth. Why aren't they
-  # the same? different parents? can we get a better identifier?
-  user: String!
-}
-type post_type {
-  content: String!
-  author: String!
-  date: String!
-  rating: Decimal
-  files: [post__files_type]!
-}
-type post__files_type {
-  id: Int!
-  name: String!
-  content_type: String!
-  size: Int!
-}
-
-type author__user_type {
+  user: user_type  # since from custom serializer, don't use nested syntax
+}                          
+type user_type {
   id: Int!
   last_login: String
   is_superuser: Boolean!
@@ -104,13 +122,19 @@ type author__user_type {
   user_permissions: [String]!
 }
 
-type post__author_type {
-  name: String!
-  age: Int
-  active: Boolean!
-  profile_picture: String
-  user: String!
-}
+type post_type {
+  content: String!
+  author: author_type! # I think this should just be author_type, since it comes from the author serializer, which defines author_type
+  date: String!
+  rating: Decimal
+  files: [post__files_type]
 
+}
+type post__files_type {
+  id: Int!
+  name: String!
+  content_type: String!
+  size: Int!
+}
 
 """

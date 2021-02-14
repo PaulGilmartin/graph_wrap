@@ -6,8 +6,8 @@ from django.db import models
 
 class Media(models.Model):
     name = models.TextField()
-    content_type = models.TextField()
-    size = models.BigIntegerField()
+    content_type = models.TextField(null=True)
+    size = models.BigIntegerField(null=True)
 
 
 class Author(models.Model):

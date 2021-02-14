@@ -29,8 +29,14 @@ class TestGraphWrapBase(ResourceTestCaseMixin, TransactionTestCase):
             size=60,
         )
         paul_user = User.objects.create(password='1234', username='Paul')
+        profile_picture = Media.objects.create(
+            name='paul.jpg')
         self.paul = Author.objects.create(
-            name='Paul', age='30', user=paul_user)
+            name='Paul',
+            age='30',
+            user=paul_user,
+            profile_picture=profile_picture,
+        )
         self.pauls_first_post = Post.objects.create(
             content='My first post!',
             author=self.paul,
@@ -173,7 +179,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
 
     def test_get_rest_api(self):
         response = self.client.get(
-            '/django_rest/author/',
+            '/django_rest/post/',
             content_type="application/json",
         )
         self.assertHttpOK(response)
