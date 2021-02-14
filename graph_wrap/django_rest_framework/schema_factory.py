@@ -73,6 +73,8 @@ class SchemaFactory(object):
 
     def create(self):
         query_class_attrs = dict()
+        type_mapping = dict()
+        non_root_types = []
         for api in self._apis:
             """
             Here api is a DRF viewset. The related fields might not necessarily
@@ -92,11 +94,12 @@ class SchemaFactory(object):
                See https://stackoverflow.com/questions/9541025/how-to-copy-a-python-class
             
             """
-            api_transformer = ApiTransformer(api)
+            api_transformer = ApiTransformer(api, type_mapping=type_mapping)
             root_type = api_transformer.root_type()
             query_attributes = QueryAttributes(api, root_type)
             query_class_attrs.update(**query_attributes.to_dict())
-            non_root_types = api_transformer.non_root_types()
+            non_root_types.extend(api_transformer.non_root_types())
+            type_mapping = api_transformer.type_mapping
         Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)
         schema = graphene.Schema(query=Query, types=non_root_types)
         return schema

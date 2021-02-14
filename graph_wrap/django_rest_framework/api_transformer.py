@@ -12,14 +12,14 @@ import six
 
 
 class ApiTransformer(object):
-    def __init__(self, api):
+    def __init__(self, api, type_mapping=None):
         self._api = api
         self._root_serializer = api.get_serializer()
         self._all_serializers = []
         self._collect_nested_serializers(self._root_serializer)
         self._root_serializer, *self._nested_serializers = self._all_serializers
         self._root_graphene_type_name = u'{}_type'.format(self._api.basename)
-        self.type_mapping = dict()
+        self.type_mapping = type_mapping or dict()
 
     def root_type(self):
         root_type = SerializerTransformer(
@@ -35,15 +35,15 @@ class ApiTransformer(object):
             nested_transformed = SerializerTransformer(
                 nested, self.type_mapping).graphene_object_type()
             non_root_types.append(nested_transformed)
-            if isinstance(nested.parent, ListSerializer):
-                # For 'to many' fields
-                list_serializer = nested.parent
-                self.type_mapping[
-                    (list_serializer.field_name,
-                     list_serializer.parent)] = nested_transformed
-            else:
-                self.type_mapping[
-                    (nested.field_name, nested.parent)] = nested_transformed
+            # if isinstance(nested.parent, ListSerializer):
+            #     # For 'to many' fields
+            #     list_serializer = nested.parent
+            #     self.type_mapping[
+            #         (list_serializer.field_name,
+            #          list_serializer.parent)] = nested_transformed
+            # else:
+            #     self.type_mapping[
+            #         (nested.field_name, nested.parent)] = nested_transformed
         return non_root_types
 
     def _collect_nested_serializers(self, serializer):
@@ -72,33 +72,35 @@ class SerializerTransformer(object):
         self._serializer = serializer
         self._model_name = self._serializer.Meta.model.__name__.lower()
         self.type_mapping = type_mapping
-        # If not graphene_type_name not passed in explicitly, we assume
-        # the serializer comes from the 'NestedSerializer' DRF class
-        # (which is built dynamically from a nested related model field).
-        # Will this always be the case? What if we have a nested custom
-        # serializer which doesn't come from the root query? How
-        # would we name that?
-        self._graphene_type_name = graphene_type_name or (
-            self._build_graphene_type_name())
+        self._graphene_type_name = (
+                graphene_type_name or self._build_graphene_type_name())
         self._graphene_object_type_class_attrs = dict()
 
     def graphene_object_type(self):
-        for field in self._serializer.fields.values():
-            self._add_field_data(field)
-        graphene_type = type(
-            str(self._graphene_type_name),
-            (ObjectType,),
-            self._graphene_object_type_class_attrs,
-        )
-        return graphene_type
+        try:
+            return self.type_mapping[self._graphene_type_name]
+        except KeyError:
+            for field in self._serializer.fields.values():
+                self._add_field_data(field)
+            graphene_type = type(
+                self._graphene_type_name,
+                (ObjectType,),
+                self._graphene_object_type_class_attrs,
+            )
+            self.type_mapping[self._graphene_type_name] = graphene_type
+            return graphene_type
 
     def _build_graphene_type_name(self):
         if isinstance(self._serializer.parent, ListSerializer):
             named_field = self._serializer.parent
         else:
             named_field = self._serializer
-        model = named_field.parent.Meta.model.__name__.lower()
-        return '{}__{}_type'.format(model, named_field.field_name)
+        serializer_cls_name = self._serializer.__class__.__name__
+        if serializer_cls_name == 'NestedSerializer':
+            model = named_field.parent.Meta.model.__name__.lower()
+            return '{}__{}_type'.format(model, named_field.field_name)
+        else:
+            return '{}_type'.format(named_field.field_name)
 
     def _add_field_data(self, field):
         field_transformer = FieldTransformer.get_transformer(
@@ -114,9 +116,8 @@ class FieldTransformer:
     _graphene_type = None
 
     def __init__(self, field, type_mapping):
+        # these arguments couple it a bit too much, can we improve?
         self._field = field
-        self.identifier = (
-            self._field.field_name, self._field.parent)
         self.type_mapping = type_mapping
 
     @classmethod
@@ -143,6 +144,7 @@ class FieldTransformer:
                 'EmailField': StringValuedFieldTransformer,
                 'RelatedField': StringValuedFieldTransformer,
                 'HyperlinkedRelatedField': StringValuedFieldTransformer,
+                'PrimaryKeyRelatedField': StringValuedFieldTransformer,
                 'ManyRelatedField': ListOfStringsValuedFieldTransformer,
             }
             # Can we make this easily extendable for clients?
@@ -185,7 +187,8 @@ class ScalarValuedFieldTransformer(FieldTransformer):
 class RelatedValuedFieldTransformer(FieldTransformer):
     """Functionality for transforming a 'related' field."""
     def __init__(self, field, type_mapping):
-        super(RelatedValuedFieldTransformer, self).__init__(field, type_mapping)
+        super(RelatedValuedFieldTransformer, self).__init__(
+            field, type_mapping)
         self._field_class = field.__class__
         self._is_to_many = getattr(field, 'many', False)
 
@@ -203,7 +206,19 @@ class RelatedValuedFieldTransformer(FieldTransformer):
     def _graphene_type(self):
         # Needs to be lazy since at this point the related
         # type may not yet have been created
-        return lambda: self.type_mapping[self.identifier]
+        return lambda: self.type_mapping[self._build_graphene_type_name()]
+
+    def _build_graphene_type_name(self):
+        if isinstance(self._field.parent, ListSerializer):
+            named_field = self._field.parent
+        else:
+            named_field = self._field
+        serializer_cls_name = self._field.__class__.__name__
+        if serializer_cls_name == 'NestedSerializer':
+            model = named_field.parent.Meta.model.__name__.lower()
+            return '{}__{}_type'.format(model, named_field.field_name)
+        else:
+            return '{}_type'.format(named_field.field_name)
 
 
 class StringValuedFieldTransformer(ScalarValuedFieldTransformer):

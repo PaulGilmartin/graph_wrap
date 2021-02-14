@@ -70,6 +70,15 @@ class TestGraphWrapBase(ResourceTestCaseMixin, TransactionTestCase):
 
 class TestSchemaFactory(TestGraphWrapBase):
     """
+    Next: sort out     @property
+    def _graphene_type(self):
+        # Needs to be lazy since at this point the related
+        # type may not yet have been created
+        return lambda: self.type_mapping[self._build_graphene_type_name()]
+    """
+
+
+    """
     Next things to consider:
     1. More assertions on the current API.
     2. More testing with custom serialiazers?
