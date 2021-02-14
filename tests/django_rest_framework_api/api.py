@@ -105,7 +105,7 @@ type author_type {
   age: Int
   active: Boolean!
   profile_picture: String
-  user: user_type  # since from custom serializer, don't use nested syntax
+  user: user_type!  # since from custom serializer, don't use nested syntax
 }                          
 type user_type {
   id: Int!
@@ -124,10 +124,10 @@ type user_type {
 
 type post_type {
   content: String!
-  author: author_type! # I think this should just be author_type, since it comes from the author serializer, which defines author_type
+  author: author_type! 
   date: String!
   rating: Decimal
-  files: [post__files_type]
+  files: [post__files_type]  # only one not working as we have [post__files_type]!
 
 }
 type post__files_type {

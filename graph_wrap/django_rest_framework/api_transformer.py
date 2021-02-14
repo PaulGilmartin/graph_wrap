@@ -209,16 +209,15 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         return lambda: self.type_mapping[self._build_graphene_type_name()]
 
     def _build_graphene_type_name(self):
-        if isinstance(self._field.parent, ListSerializer):
-            named_field = self._field.parent
+        if isinstance(self._field, ListSerializer):
+            serializer_cls_name = self._field.child.__class__.__name__
         else:
-            named_field = self._field
-        serializer_cls_name = self._field.__class__.__name__
+            serializer_cls_name = self._field.__class__.__name__
         if serializer_cls_name == 'NestedSerializer':
-            model = named_field.parent.Meta.model.__name__.lower()
-            return '{}__{}_type'.format(model, named_field.field_name)
+            model = self._field.parent.Meta.model.__name__.lower()
+            return '{}__{}_type'.format(model, self._field.field_name)
         else:
-            return '{}_type'.format(named_field.field_name)
+            return '{}_type'.format(self._field.field_name)
 
 
 class StringValuedFieldTransformer(ScalarValuedFieldTransformer):
