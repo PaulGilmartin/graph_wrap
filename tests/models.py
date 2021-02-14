@@ -22,7 +22,8 @@ class Author(models.Model):
 class Post(models.Model):
     content = models.TextField()
     date = models.DateTimeField()
-    author = models.ForeignKey(Author, null=True, on_delete=models.SET_NULL)
+    author = models.ForeignKey(
+        Author, null=True, on_delete=models.SET_NULL, related_name='entries')
     files = models.ManyToManyField('Media')
     rating = models.DecimalField(null=True, decimal_places=20, max_digits=40)
 

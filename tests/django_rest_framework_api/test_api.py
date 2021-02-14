@@ -103,7 +103,7 @@ class TestSchemaFactory(TestGraphWrapBase):
     def test_author_type(self):
         author_type = self.type_map['author_type']
         self.assertEqual(
-            {'name', 'age', 'active', 'profile_picture', 'user'},
+            {'name', 'age', 'active', 'profile_picture', 'user', 'entries'},
             set(author_type.fields),
         )
         self.assertFieldType(author_type, 'name', GraphQLNonNull)
@@ -118,19 +118,18 @@ class TestSchemaFactory(TestGraphWrapBase):
         # the profile_picture field type to be GraphQLScalarType.
         self.assertFieldType(
             author_type, 'profile_picture', GraphQLScalarType)
-        # this is wrong, this should be a GraphQLField
         self.assertFieldType(author_type, 'user', GraphQLNonNull)
         self.assertFieldTypeOfType(author_type, 'user', GrapheneObjectType)
 
     def test_post_type(self):
         post_type = self.type_map['post_type']
         self.assertEqual(
-            {'content', 'date', 'author', 'rating', 'files'},
+            {'content', 'date', 'written_by', 'rating', 'files'},
             set(post_type.fields),
         )
         self.assertFieldType(post_type, 'content', GraphQLNonNull)
         self.assertFieldType(post_type, 'date', GraphQLNonNull)
-        self.assertFieldType(post_type, 'author', GraphQLScalarType)
+        self.assertFieldType(post_type, 'written_by', GraphQLScalarType)
         self.assertFieldType(post_type, 'files', GraphQLScalarType)
         self.assertFieldType(post_type, 'active', GraphQLNonNull)
         self.assertFieldType(post_type, 'rating', GraphQLScalarType)
@@ -188,7 +187,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
 
     def test_get_rest_api(self):
         response = self.client.get(
-            '/django_rest/post/',
+            '/django_rest/author/',
             content_type="application/json",
         )
         self.assertHttpOK(response)

@@ -14,6 +14,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 class AuthorSerializer(serializers.ModelSerializer):
     user = UserSerializer()
+    # Depth does not apply to reverse fields
+    entries = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Post.objects.all())
 
     class Meta:
         model = Author
@@ -23,6 +26,7 @@ class AuthorSerializer(serializers.ModelSerializer):
             'active',
             'profile_picture',
             'user',
+            'entries',
         ]
 
 
@@ -104,7 +108,7 @@ type author_type {
   name: String!
   age: Int
   active: Boolean!
-  profile_picture: String
+  profile_picture: String  # since depth=0, this is only a pk (or a URI)
   user: user_type!  # since from custom serializer, don't use nested syntax
 }                          
 type user_type {
@@ -124,7 +128,7 @@ type user_type {
 
 type post_type {
   content: String!
-  written_by: author_type!  # incorrect as we have written_by_type and a distinct written_by_type
+  written_by: author_type!
   date: String!
   rating: Decimal
   files: [post__files_type]  # only one not working as we have [post__files_type]!
