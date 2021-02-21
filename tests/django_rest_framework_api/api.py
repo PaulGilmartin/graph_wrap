@@ -31,7 +31,7 @@ class AuthorSerializer(serializers.ModelSerializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
-    written_by = AuthorSerializer()
+    written_by = AuthorSerializer(source='author')
 
     class Meta:
         model = Post

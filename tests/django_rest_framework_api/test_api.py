@@ -70,22 +70,15 @@ class TestGraphWrapBase(ResourceTestCaseMixin, TransactionTestCase):
 
 class TestSchemaFactory(TestGraphWrapBase):
     """
-    Next: sort out     @property
-    def _graphene_type(self):
-        # Needs to be lazy since at this point the related
-        # type may not yet have been created
-        return lambda: self.type_mapping[self._build_graphene_type_name()]
-    """
 
-
-    """
     Next things to consider:
+    0. Get required/non-null correct
+    1. Test all field types (scalar + non-scalar)
+
     1. More assertions on the current API.
     2. More testing with custom serialiazers?
     3. Test using custom serializers as fields (both which are views and not)
-    4. Get required/non-null correct
     5. Custom 'dehyration' methods
-    6. Test all field types (scalar + non-scalar)
     7. Integration test on localhost
     """
     def setUp(self):
@@ -129,10 +122,12 @@ class TestSchemaFactory(TestGraphWrapBase):
         )
         self.assertFieldType(post_type, 'content', GraphQLNonNull)
         self.assertFieldType(post_type, 'date', GraphQLNonNull)
-        self.assertFieldType(post_type, 'written_by', GraphQLScalarType)
-        self.assertFieldType(post_type, 'files', GraphQLScalarType)
-        self.assertFieldType(post_type, 'active', GraphQLNonNull)
+
+        self.assertFieldType(post_type, 'written_by', GraphQLNonNull)
+        self.assertFieldTypeOfType(post_type, 'written_by', GrapheneObjectType)
+
         self.assertFieldType(post_type, 'rating', GraphQLScalarType)
+        self.assertFieldType(post_type, 'files', GraphQLScalarType)  # should be nullable list
 
 
 class TestGraphWrapApi(TestGraphWrapBase):
@@ -164,7 +159,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             query {
                 all_posts {
                     content
-                    author {
+                    written_by {
                         name
                     }
                 }
@@ -178,16 +173,17 @@ class TestGraphWrapApi(TestGraphWrapBase):
             content_type="application/json",
         )
         self.assertHttpOK(response)
-        all_authors_data = json.loads(
-            response.content)['data']['all_authors']
+        all_posts_data = json.loads(
+            response.content)['data']['all_posts']
         self.assertEqual(
-            [{'name': 'Paul'}, {'name': 'Scott'}],
-            all_authors_data,
+            [{'content':  self.pauls_first_post.content,
+             'written_by': {'name': 'Paul'}}],
+            all_posts_data,
         )
 
     def test_get_rest_api(self):
         response = self.client.get(
-            '/django_rest/author/',
+            '/django_rest/post/',
             content_type="application/json",
         )
         self.assertHttpOK(response)
