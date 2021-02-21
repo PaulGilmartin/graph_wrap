@@ -55,51 +55,93 @@ class QueryResolver(GrapheneFieldResolver):
     def rest_api_resolver_method(cls, resource_adapter, **kwargs):
         pass
 
+    def _build_selected_fields_cls(self):
+        class SelectedFields(self._api.serializer_class):
+
+            __name__ = self._api.__class__.serializer_class.__name__
+
+            def __init__(self, *args, **kwargs):
+                fields = self._kwargs['context']['request'].environ.get(
+                    'selected_fields', [])
+                super().__init__(*args, **kwargs)
+                if fields is not None:
+                    allowed = set(fields)
+                    existing = set(self.fields)
+                    for field_name in existing - allowed:
+                        self.fields.pop(field_name)
+
+        return SelectedFields
+
     def __call__(self, root, info, **kwargs):
         get_request = transform_graphql_resolve_info(
             self._field_name, info, **kwargs)
-        selectable_fields_api = _selectable_fields_mutator(
-            self._api)
-        rest_resolver_method = self.rest_api_resolver_method(
-            selectable_fields_api,
-            **kwargs
-        )
-        # consider using threads to dynamically update the class,
-        # e.g. simple history?
-        """
-        What we need:
-         - To ensure that we fire get_request at self._api
-           such that only the fields defined by selected_fields
-           are serialized. This needs to be done recursively,
-           ensuring that nested related resources only
-           serialize the corresponding nested selected fields.
-         - We need to "fire the request" in as close a way as
-           possible to traditional DRF - seems like using the
-           callback returned by as_view might be the best option.
-           
-         - We need a way to edit the fields coming from the
-           serializer on the viewset. Some options:
-           
-           1. Dynamically build a super class, S, of self._api.__class__
-              which pops the appropriate fields in the __init__ 
-              method (using the input request). Then set self._api.serializer_class = S. 
-              Pros: 
-                - Should be thread safe as setting on self._api (the instance)
-                - Code a bit more readable than mutating a method.
-              Cons: 
-                - Overrides the class so could fail type checks
-           2. Mutate _selectable_fields_mutator as below
-              
-        
-        """
-        view_func = self._api.__class__.as_view({'get': 'list'})
-        response = view_func(get_request).render()
-        # if response.status_code in (
-        #         300, 307, 400, 401, 403, 404, 405, 500):
-        #     raise BadRequest(response.content)
-        response_json = json.loads(
-            response.content or '{}')
-        return response_json
+        api = copy.deepcopy(self._api)
+        api.serializer_class = self._build_selected_fields_cls()
+        resolver = self.rest_api_resolver_method(api)
+        resp = resolver(get_request)
+
+        # selected_fields = get_request.environ.get('selected_fields', [])
+        # serializer = api.get_serializer(graphql_fields=selected_fields)
+        # serializer
+
+
+def _selectable_fields_get_serializer(api, *args, **kwargs):
+    serializer = api.get_serializer(*args, **kwargs)
+    selected_fields = api.request.environ.get('selected_fields', [])
+    all_fields = copy.deepcopy(selected_fields.fields.items())
+    for field_name, field in all_fields:
+        # if field is related:
+        #     pass
+        if field_name not in selected_fields:
+            serializer.fields.pop(field_name)
+    return serializer
+
+        # selectable_fields_api = _selectable_fields_mutator(
+        #     self._api)
+        # # rest_resolver_method = self.rest_api_resolver_method(
+        # #     selectable_fields_api,
+        # #     **kwargs
+        # # )
+        # # consider using threads to dynamically update the class,
+        # # e.g. simple history?
+        # """
+        # What we need:
+        #  - To ensure that we fire get_request at self._api
+        #    such that only the fields defined by selected_fields
+        #    are serialized. This needs to be done recursively,
+        #    ensuring that nested related resources only
+        #    serialize the corresponding nested selected fields.
+        #  - We need to "fire the request" in as close a way as
+        #    possible to traditional DRF - seems like using the
+        #    callback returned by as_view might be the best option.
+        #
+        #  - We need a way to edit the fields coming from the
+        #    serializer on the viewset. Some options:
+        #
+        #    1. Dynamically build a super class, S, of self._api.__class__
+        #       which pops the appropriate fields in the __init__
+        #       method (using the input request). Then set self._api.serializer_class = S.
+        #       Pros:
+        #         - Should be thread safe as setting on self._api (the instance)
+        #         - Code a bit more readable than mutating a method.
+        #       Cons:
+        #         - Overrides the class so could fail type checks
+        #    2. Mutate _selectable_fields_mutator as below
+        #
+        #
+        # """
+        # view_func = self._api.__class__.as_view({'get': 'list'})
+        # response = view_func(get_request).render()
+        # # if response.status_code in (
+        # #         300, 307, 400, 401, 403, 404, 405, 500):
+        # #     raise BadRequest(response.content)
+        # response_json = json.loads(
+        #     response.content or '{}')
+        # return response_json
+        #
+
+
+
 
 
 class AllItemsQueryResolver(QueryResolver):
@@ -161,18 +203,6 @@ def _selectable_fields_mutator(api):
         field implementation (e.g. should work with custom
         field types/ custom views).
      """
-    # api = copy.deepcopy(api)
-    # api.get_serializer = _selectable_fields_get_serializer.__get__(api)
+    api = copy.deepcopy(api)
+    api.get_serializer = _selectable_fields_get_serializer.__get__(api)
     return api
-
-
-def _selectable_fields_get_serializer(api, *args, **kwargs):
-    serializer = api.get_serializer(*args, **kwargs)
-    selected_fields = api.request.environ.get('selected_fields', [])
-    all_fields = copy.deepcopy(selected_fields.fields.items())
-    for field_name, field in all_fields:
-        # if field is related:
-        #     pass
-        if field_name not in selected_fields:
-            serializer.fields.pop(field_name)
-    return serializer
