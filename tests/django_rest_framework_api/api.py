@@ -49,6 +49,9 @@ class AuthorViewSet(viewsets.ModelViewSet):
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
 
+    def dispatch(self, request, *args, **kwargs):
+        return super(AuthorViewSet, self).dispatch(request, *args, **kwargs)
+
 
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()

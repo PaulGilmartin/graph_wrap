@@ -51,31 +51,49 @@ class QueryResolver(GrapheneFieldResolver):
     def __call__(self, root, info, **kwargs):
         get_request = transform_graphql_resolve_info(
             self._field_name, info, **kwargs)
-        self._api.serializer_class = self._build_selected_fields_cls()
-        resolver = self.rest_api_resolver_method()
+        self._api.serializer_class = self._build_selected_fields_cls(self._api)
+        # Would be better if we could get following to work, but it
+        # would involve mutating the class of the api instance, which
+        # isn't thread safe?
+        # Looking at our REST tests tell us what we should call as_view with
+        # Maybe we can subclass the api class?
+        # view_func = self._api.__class__.as_view({'get': 'list'})
+        # response = view_func(get_request).render()
+        resolver = self.rest_api_resolver_method(**kwargs)
         response = resolver(get_request).render()
         # handle bad status codes
-        response_json = json.loads(
-            response.content or '{}')
+        response_json = json.loads(response.content or '{}')
         return response_json
 
-    def _build_selected_fields_cls(self):
-        class SelectedFields(self._api.serializer_class):
+    def _build_selected_fields_cls(self, api):
+        class SelectedFieldsSerializer(api.serializer_class):
 
             # is this __name__ working?
+            # Main issue with this is that it may fail type checking
+            # in user code.
+            # Possible alternative is to bind this __init__
+            # as we did the tastypie dehydrate?
             __name__ = self._api.__class__.serializer_class.__name__
 
             def __init__(self, *args, **kwargs):
-                fields = self._kwargs['context']['request'].environ.get(
-                    'selected_fields', [])
+                request = self._kwargs['context']['request']
+                selected_fields = request.environ.get('selected_fields', [])
                 super().__init__(*args, **kwargs)
-                if fields is not None:
-                    allowed = set(fields)
-                    existing = set(self.fields)
-                    for field_name in existing - allowed:
-                        self.fields.pop(field_name)
+                self._set_selected_fields(self, selected_fields)
 
-        return SelectedFields
+            def _set_selected_fields(self, serializer, selected_fields):
+                allowed = set(selected_fields)
+                existing = set(serializer.fields)
+                for field_name in existing - allowed:
+                    serializer.fields.pop(field_name)
+                for field_name, field in serializer.fields.items():
+                    if hasattr(field, 'child'):
+                        field = field.child
+                    if not hasattr(field, 'fields'):
+                        continue
+                    self._set_selected_fields(field, selected_fields[field_name])
+
+        return SelectedFieldsSerializer
 
 
 class AllItemsQueryResolver(QueryResolver):
@@ -110,6 +128,7 @@ class SingleItemQueryResolver(QueryResolver):
 
     def rest_api_resolver_method(self, **kwargs):
         return partial(
-            getattr(self._api, 'dispatch_detail'),
+            getattr(self._api, 'dispatch'),
             pk=kwargs['id'],
+            get='detail',
         )

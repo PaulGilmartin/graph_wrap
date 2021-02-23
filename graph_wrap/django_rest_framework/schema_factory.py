@@ -106,6 +106,7 @@ class SchemaFactory(object):
 
 
 class QueryAttributes(object):
+    # probably doesn't need to be a class?
     """Create the graphene Query class attributes relevant to a resource."""
 
     def __init__(self, api, graphene_type):
