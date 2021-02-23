@@ -51,28 +51,24 @@ class QueryResolver(GrapheneFieldResolver):
     def __call__(self, root, info, **kwargs):
         get_request = transform_graphql_resolve_info(
             self._field_name, info, **kwargs)
-        self._api.serializer_class = self._build_selected_fields_cls(self._api)
-        # Would be better if we could get following to work, but it
-        # would involve mutating the class of the api instance, which
-        # isn't thread safe?
-        # Looking at our REST tests tell us what we should call as_view with
-        # Maybe we can subclass the api class?
-        # view_func = self._api.__class__.as_view({'get': 'list'})
-        # response = view_func(get_request).render()
-        resolver = self.rest_api_resolver_method(**kwargs)
-        response = resolver(get_request).render()
+        selected_fields_cls = self._build_selected_fields_cls(self._api)
+        # Look at REST tests to get the correct args for as_view
+        view_func = selected_fields_cls.as_view({'get': 'list'})
+        response = view_func(get_request).render()
+        # resolver = self.rest_api_resolver_method(**kwargs)
+        # response = resolver(get_request).render()
         # handle bad status codes
         response_json = json.loads(response.content or '{}')
         return response_json
 
     def _build_selected_fields_cls(self, api):
+        # is this __name__ working?
+        # Main issue with this is that it may fail type checking
+        # in user code.
+        # Possible alternative is to bind this __init__
+        # as we did the tastypie dehydrate?
         class SelectedFieldsSerializer(api.serializer_class):
 
-            # is this __name__ working?
-            # Main issue with this is that it may fail type checking
-            # in user code.
-            # Possible alternative is to bind this __init__
-            # as we did the tastypie dehydrate?
             __name__ = self._api.__class__.serializer_class.__name__
 
             def __init__(self, *args, **kwargs):
@@ -93,7 +89,10 @@ class QueryResolver(GrapheneFieldResolver):
                         continue
                     self._set_selected_fields(field, selected_fields[field_name])
 
-        return SelectedFieldsSerializer
+        class SelectedFieldsView(api.__class__):
+            serializer_class = SelectedFieldsSerializer
+
+        return SelectedFieldsView
 
 
 class AllItemsQueryResolver(QueryResolver):
