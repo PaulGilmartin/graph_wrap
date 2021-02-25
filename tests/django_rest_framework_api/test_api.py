@@ -236,6 +236,67 @@ class TestGraphWrapApi(TestGraphWrapBase):
             author_data,
         )
 
+    def test_single_author_query_with_m2m(self):
+        query = '''
+            query {
+                post(id: %d) {
+                    content
+                    files {
+                        name
+                    }
+                }
+            }
+            ''' % self.pauls_first_post.pk
+        body = {"query": query}
+        request_json = json.dumps(body)
+        response = self.client.post(
+            self.graphql_endpoint,
+            request_json,
+            content_type="application/json",
+        )
+        self.assertHttpOK(response)
+        post_data = json.loads(response.content)['data']['post']
+        self.assertEqual(
+            {'content': self.pauls_first_post.content,
+             'files': [{'name': 'elephant'}, {'name': 'giraffe'}]},
+            post_data,
+        )
+
+    def test_post_query_with_fragments(self):
+        query = '''
+            query {
+                all_posts {
+                    content
+                    ...postFragment
+                    written_by {
+                        ...authorFragment
+                    }
+                }
+            }
+            fragment postFragment on post_type {
+                content
+            }
+            fragment authorFragment on author_type {
+                name
+            }
+            '''
+        body = {"query": query}
+        request_json = json.dumps(body)
+
+        response = self.client.post(
+            self.graphql_endpoint,
+            request_json,
+            content_type="application/json",
+        )
+        self.assertHttpOK(response)
+        post_data = json.loads(
+            response.content)['data']['all_posts'][0]
+        self.assertEqual('My first post!', post_data['content'])
+        self.assertEqual({'name': 'Paul'}, post_data['written_by'])
+
+    def test_query_with_directive(self):
+        pass
+
     def test_get_rest_api(self):
         response = self.client.get(
             '/django_rest/post/',

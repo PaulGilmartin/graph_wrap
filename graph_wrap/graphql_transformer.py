@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 from django.core.handlers.wsgi import WSGIRequest
 # Remember directives
-from rest_framework.request import clone_request
 
 
 def transform_graphql_resolve_info(
