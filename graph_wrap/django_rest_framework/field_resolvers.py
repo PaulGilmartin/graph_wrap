@@ -51,12 +51,8 @@ class QueryResolver(GrapheneFieldResolver):
     def __call__(self, root, info, **kwargs):
         get_request = transform_graphql_resolve_info(
             self._field_name, info, **kwargs)
-        selected_fields_cls = self._build_selected_fields_cls(self._api)
-        # Look at REST tests to get the correct args for as_view
-        view_func = selected_fields_cls.as_view({'get': 'list'})
-        response = view_func(get_request).render()
-        # resolver = self.rest_api_resolver_method(**kwargs)
-        # response = resolver(get_request).render()
+        resolver = self.rest_api_resolver_method(**kwargs)
+        response = resolver(get_request).render()
         # handle bad status codes
         response_json = json.loads(response.content or '{}')
         return response_json
@@ -110,7 +106,13 @@ class AllItemsQueryResolver(QueryResolver):
         return response_json
 
     def rest_api_resolver_method(self, **kwargs):
-        return getattr(self._api, 'dispatch')
+        selected_fields_cls = self._build_selected_fields_cls(self._api)
+        return selected_fields_cls.as_view(
+            actions={'get': 'list'},
+            suffix='List',
+            basename=self._api.basename,
+            detail=False,
+        )
 
 
 class SingleItemQueryResolver(QueryResolver):
@@ -126,8 +128,13 @@ class SingleItemQueryResolver(QueryResolver):
     """
 
     def rest_api_resolver_method(self, **kwargs):
+        selected_fields_cls = self._build_selected_fields_cls(self._api)
         return partial(
-            getattr(self._api, 'dispatch'),
+            selected_fields_cls.as_view(
+                actions={'get': 'retrieve'},
+                suffix='Instance',
+                basename=self._api.basename,
+                detail=True,
+            ),
             pk=kwargs['id'],
-            get='detail',
         )
