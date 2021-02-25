@@ -116,18 +116,35 @@ class FieldTransformer:
     @classmethod
     def get_transformer(cls, field, type_mapping):
         """
-        Missing:
-        """
+from rest_framework.fields import (  # NOQA # isort:skip
+    BooleanField, CharField, ChoiceField, DateField, DateTimeField, DecimalField,
+    DictField, DurationField, EmailField, Field, FileField, FilePathField, FloatField,
+    HiddenField, HStoreField, IPAddressField, ImageField, IntegerField, JSONField,
+    ListField, ModelField, MultipleChoiceField, NullBooleanField, ReadOnlyField,
+    RegexField, SerializerMethodField, SlugField, TimeField, URLField, UUIDField,
+)
+from rest_framework.relations import (  # NOQA # isort:skip
+    HyperlinkedIdentityField, HyperlinkedRelatedField, ManyRelatedField,
+    PrimaryKeyRelatedField, RelatedField, SlugRelatedField, StringRelatedField,
+)        """
+        # should we check fields aren't write-only?
         base_types = {
             serializers.BooleanField: BooleanValuedFieldTransformer,
             serializers.CharField: StringValuedFieldTransformer,
+            #serializers.ChoiceField:          # Also covers FilePathField
+            serializers.DateField: StringValuedFieldTransformer,
+            serializers.DateTimeField: StringValuedFieldTransformer,
+            serializers.DecimalField: StringValuedFieldTransformer,
+            #serializers.DurationField: ,
             serializers.DictField: DictValuedFieldTransformer,
+            # serializers.FileField: ,
+
             serializers.FloatField: FloatValuedFieldTransformer,
             serializers.ListField: ListValuedFieldTransformer,
             serializers.ModelSerializer: RelatedValuedFieldTransformer,
         }
-        serializer_type = next(
-            (t for t in base_types if isinstance(field, t)), None)
+        transformer_class = next(
+            (v for t, v in base_types.items() if isinstance(field, t)), None)
 
 
         serializer_field_to_transformer = {
