@@ -1,6 +1,8 @@
-1. SelectedFieldsClass will fail type checks 
-2. Test directives
-3. Decide what to do about handling custom field types
-4. More thoroughly test complex scenarios
-5. Ensure we can run with only one of tastypie or DRF installed
-6. Factor out shared logic
+*. SelectedFieldsClass will fail type checks 
+*. Handle SerializerMethodField
+* Handle custom serialization of model fields (se https://stackoverflow.com/questions/37798208/django-rest-framework-custom-serializer-method)
+*. Test directives
+*. Decide what to do about handling custom field types
+*. More thoroughly test complex scenarios
+*. Ensure we can run with only one of tastypie or DRF installed
+*. Factor out shared logic

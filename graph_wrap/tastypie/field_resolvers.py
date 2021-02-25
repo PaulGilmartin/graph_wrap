@@ -137,6 +137,11 @@ def _selectable_fields_mutator(resource):
      2. It makes few assumptions about client codes resource/
         field implementation (e.g. will work with custom
         field types/ custom resources).
+     Explored alternatives were:
+      * Dynamically create a subclass of our api which overrides
+        the dehydrate method in the way we wish. This however has
+        the immediate disadvantage that any type checking of the
+        api in the client code would then fail.
      """
     resource = copy.deepcopy(resource)
     resource.full_dehydrate = _selectable_fields_full_dehydrate.__get__(

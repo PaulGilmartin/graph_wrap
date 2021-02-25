@@ -17,6 +17,8 @@ class AuthorSerializer(serializers.ModelSerializer):
     # Depth does not apply to reverse fields
     entries = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Post.objects.all())
+    #amount_of_entries = serializers.SerializerMethodField()
+    name = serializers.CharField(source='get_name')
 
     class Meta:
         model = Author
@@ -28,6 +30,7 @@ class AuthorSerializer(serializers.ModelSerializer):
             'user',
             'entries',
         ]
+
 
 
 class PostSerializer(serializers.ModelSerializer):

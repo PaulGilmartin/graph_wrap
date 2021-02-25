@@ -18,6 +18,10 @@ class Author(models.Model):
     profile_picture = models.ForeignKey(
         Media, null=True, on_delete=models.PROTECT)
 
+    def get_name(self):
+        # Use to test custom additional serialization
+        return self.name.upper()
+
 
 class Post(models.Model):
     content = models.TextField()

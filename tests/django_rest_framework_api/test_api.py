@@ -150,7 +150,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
         all_authors_data = json.loads(
             response.content)['data']['all_authors']
         self.assertEqual(
-            [{'name': 'Paul'}, {'name': 'Scott'}],
+            [{'name': 'PAUL'}, {'name': 'SCOTT'}],
             all_authors_data,
         )
 
@@ -177,7 +177,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             response.content)['data']['all_posts']
         self.assertEqual(
             [{'content':  self.pauls_first_post.content,
-             'written_by': {'name': 'Paul'}}],
+             'written_by': {'name': 'PAUL'}}],
             all_posts_data,
         )
 
@@ -203,7 +203,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
         all_authors_data = json.loads(
             response.content)['data']['all_authors']
         self.assertEqual(
-            [{'name': 'Paul'}, {'name': 'Scott'}],
+            [{'name': 'PAUL'}, {'name': 'SCOTT'}],
             all_authors_data,
         )
         all_post_data = json.loads(
@@ -232,7 +232,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
         self.assertHttpOK(response)
         author_data = json.loads(response.content)['data']['author']
         self.assertEqual(
-            {'name': 'Scott', 'age': 28},
+            {'name': 'SCOTT', 'age': 28},
             author_data,
         )
 
@@ -292,7 +292,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
         post_data = json.loads(
             response.content)['data']['all_posts'][0]
         self.assertEqual('My first post!', post_data['content'])
-        self.assertEqual({'name': 'Paul'}, post_data['written_by'])
+        self.assertEqual({'name': 'PAUL'}, post_data['written_by'])
 
     def test_query_with_directive(self):
         pass
