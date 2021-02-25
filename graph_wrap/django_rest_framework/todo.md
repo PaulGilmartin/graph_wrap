@@ -1,6 +1,6 @@
 *. SelectedFieldsClass will fail type checks 
 *. Handle SerializerMethodField
-* Handle custom serialization of model fields (se https://stackoverflow.com/questions/37798208/django-rest-framework-custom-serializer-method)
+*  (DONE) Handle custom serialization of model fields (se https://stackoverflow.com/questions/37798208/django-rest-framework-custom-serializer-method)
 *. Test directives
 *. Decide what to do about handling custom field types
 *. More thoroughly test complex scenarios
