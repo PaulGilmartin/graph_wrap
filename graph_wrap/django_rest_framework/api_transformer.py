@@ -112,8 +112,27 @@ class FieldTransformer:
         self._field = field
         self.type_mapping = type_mapping
 
+
     @classmethod
     def get_transformer(cls, field, type_mapping):
+        """
+        Missing:
+        """
+        base_types = {
+            serializers.BooleanField: BooleanValuedFieldTransformer,
+            serializers.CharField: StringValuedFieldTransformer,
+            serializers.DictField: DictValuedFieldTransformer,
+            serializers.FloatField: FloatValuedFieldTransformer,
+            serializers.ListField: ListValuedFieldTransformer,
+            serializers.ModelSerializer: RelatedValuedFieldTransformer,
+        }
+        serializer_type = next(
+            (t for t in base_types if isinstance(field, t)), None)
+
+
+        serializer_field_to_transformer = {
+            'CharField': StringValuedFieldTransformer,
+        }[]
         if isinstance(field, serializers.ModelSerializer):
             transformer_class = RelatedValuedFieldTransformer
         elif hasattr(field, 'child') and isinstance(
