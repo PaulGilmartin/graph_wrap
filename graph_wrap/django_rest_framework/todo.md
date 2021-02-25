@@ -6,3 +6,4 @@
 *. More thoroughly test complex scenarios
 *. Ensure we can run with only one of tastypie or DRF installed
 *. Factor out shared logic
+*  required fields 

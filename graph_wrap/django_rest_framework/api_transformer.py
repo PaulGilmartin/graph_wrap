@@ -117,71 +117,36 @@ class FieldTransformer:
     def get_transformer(cls, field, type_mapping):
         """
 from rest_framework.fields import (  # NOQA # isort:skip
-    BooleanField, CharField, ChoiceField, DateField, DateTimeField, DecimalField,
-    DictField, DurationField, EmailField, Field, FileField, FilePathField, FloatField,
-    HiddenField, HStoreField, IPAddressField, ImageField, IntegerField, JSONField,
-    ListField, ModelField, MultipleChoiceField, NullBooleanField, ReadOnlyField,
-    RegexField, SerializerMethodField, SlugField, TimeField, URLField, UUIDField,
-)
-from rest_framework.relations import (  # NOQA # isort:skip
-    HyperlinkedIdentityField, HyperlinkedRelatedField, ManyRelatedField,
-    PrimaryKeyRelatedField, RelatedField, SlugRelatedField, StringRelatedField,
+    , , ChoiceField (MultipleChoiceField), , , ,
+    , DurationField, , Field, FileField (ImageField), FilePathField, ,
+    HiddenField, , ,, IntegerField,,
+    ListField, ModelField,, ReadOnlyField,
+    , SerializerMethodField,, TimeField,, UUIDField,
+
 )        """
-        # should we check fields aren't write-only?
+        if hasattr(field, 'child') and isinstance(
+                field.child, serializers.ModelSerializer):
+            # for ListSerializers from M2M fields
+            return RelatedValuedFieldTransformer(field, type_mapping)
+
         base_types = {
             serializers.BooleanField: BooleanValuedFieldTransformer,
             serializers.CharField: StringValuedFieldTransformer,
-            #serializers.ChoiceField:          # Also covers FilePathField
             serializers.DateField: StringValuedFieldTransformer,
             serializers.DateTimeField: StringValuedFieldTransformer,
             serializers.DecimalField: StringValuedFieldTransformer,
-            #serializers.DurationField: ,
             serializers.DictField: DictValuedFieldTransformer,
-            # serializers.FileField: ,
-
             serializers.FloatField: FloatValuedFieldTransformer,
+            serializers.IntegerField: IntegerValuedFieldTransformer,
             serializers.ListField: ListValuedFieldTransformer,
+            serializers.ManyRelatedField: ListOfStringsValuedFieldTransformer,
             serializers.ModelSerializer: RelatedValuedFieldTransformer,
+            serializers.RelatedField: StringValuedFieldTransformer,
         }
         transformer_class = next(
-            (v for t, v in base_types.items() if isinstance(field, t)), None)
-
-
-        serializer_field_to_transformer = {
-            'CharField': StringValuedFieldTransformer,
-        }[]
-        if isinstance(field, serializers.ModelSerializer):
-            transformer_class = RelatedValuedFieldTransformer
-        elif hasattr(field, 'child') and isinstance(
-                field.child, serializers.ModelSerializer):
-            # for ListSerializers from M2M fields
-            transformer_class = RelatedValuedFieldTransformer
-        else:
-            serializer_field_to_transformer = {
-                'BooleanField': BooleanValuedFieldTransformer,
-                'NullBooleanField': BooleanValuedFieldTransformer,
-                'IntegerField': IntegerValuedFieldTransformer,
-                'FloatField': FloatValuedFieldTransformer,
-                'DecimalField': DecimalValuedFieldTransformer,
-                'ListField': ListValuedFieldTransformer,
-                'DictField': DictValuedFieldTransformer,
-                'HStoreField': DictValuedFieldTransformer,
-                'JSONField': DictValuedFieldTransformer,
-                'CharField': StringValuedFieldTransformer,
-                'DateTimeField': StringValuedFieldTransformer,
-                'EmailField': StringValuedFieldTransformer,
-                'RelatedField': StringValuedFieldTransformer,
-                'HyperlinkedRelatedField': StringValuedFieldTransformer,
-                'PrimaryKeyRelatedField': StringValuedFieldTransformer,
-                'ManyRelatedField': ListOfStringsValuedFieldTransformer,
-            }
-            # Can we make this easily extendable for clients?
-            try:
-                transformer_class = serializer_field_to_transformer[
-                    field.__class__.__name__]
-            except KeyError:
-                raise KeyError(
-                    '{} not a recognised field type'.format(field.__class__))
+            (v for t, v in base_types.items() if isinstance(field, t)),
+            GenericValuedFieldTransformer,
+        )
         return transformer_class(field, type_mapping)
 
     def graphene_field(self):
@@ -247,6 +212,10 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         else:
             model = self._field.Meta.model.__name__.lower()
             return '{}_type'.format(model)
+
+
+class GenericValuedFieldTransformer(ScalarValuedFieldTransformer):
+    _graphene_type = GenericScalar
 
 
 class StringValuedFieldTransformer(ScalarValuedFieldTransformer):
