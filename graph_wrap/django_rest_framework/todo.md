@@ -8,3 +8,4 @@
 *. Factor out shared logic
 *  required fields 
 * Serializers which don't inherit from ModelSerializer
+* check write only fields

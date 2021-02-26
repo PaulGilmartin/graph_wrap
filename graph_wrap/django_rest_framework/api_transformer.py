@@ -115,22 +115,10 @@ class FieldTransformer:
 
     @classmethod
     def get_transformer(cls, field, type_mapping):
-        """
-        these map to generic obj:
-
-        from rest_framework.fields import (  # NOQA # isort:skip
-            , , ChoiceField (MultipleChoiceField), , , ,
-            , DurationField, , Field, FileField (ImageField), FilePathField, ,
-            HiddenField, , ,,,,
-            , ModelField,, ReadOnlyField,
-            , SerializerMethodField,, TimeField,, UUIDField,
-
-)        """
         if hasattr(field, 'child') and isinstance(
                 field.child, serializers.ModelSerializer):
             # for ListSerializers from M2M fields
             return RelatedValuedFieldTransformer(field, type_mapping)
-
         base_types = {
             serializers.BooleanField: BooleanValuedFieldTransformer,
             serializers.CharField: StringValuedFieldTransformer,
@@ -144,6 +132,8 @@ class FieldTransformer:
             serializers.ManyRelatedField: ListOfStringsValuedFieldTransformer,
             serializers.ModelSerializer: RelatedValuedFieldTransformer,
             serializers.RelatedField: StringValuedFieldTransformer,
+            serializers.TimeField: StringValuedFieldTransformer,
+            serializers.UUIDField: StringValuedFieldTransformer,
         }
         transformer_class = next(
             (v for t, v in base_types.items() if isinstance(field, t)),
@@ -165,12 +155,6 @@ class FieldTransformer:
 
 
 class ScalarValuedFieldTransformer(FieldTransformer):
-    """Functionality for transforming a 'scalar' valued tastypie field.
-
-    Base transformer for converting any tastypie field which is not a
-    subclass of RelatedField.
-    """
-
     def graphene_field(self):
         return self._graphene_type(
             name=self._graphene_field_name(),
@@ -180,7 +164,6 @@ class ScalarValuedFieldTransformer(FieldTransformer):
 
 
 class RelatedValuedFieldTransformer(FieldTransformer):
-    """Functionality for transforming a 'related' field."""
     def __init__(self, field, type_mapping):
         super(RelatedValuedFieldTransformer, self).__init__(
             field, type_mapping)
@@ -241,7 +224,6 @@ class DecimalValuedFieldTransformer(ScalarValuedFieldTransformer):
 
 
 class Dict(graphene.Scalar):
-    """Custom scalar to transform 'dict' type tastypie fields."""
     @staticmethod
     def serialize(dt):
         if isinstance(dt, six.string_types):

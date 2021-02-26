@@ -96,7 +96,14 @@ class TestSchemaFactory(TestGraphWrapBase):
     def test_author_type(self):
         author_type = self.type_map['author_type']
         self.assertEqual(
-            {'name', 'age', 'active', 'profile_picture', 'user', 'entries'},
+            {'name',
+             'age',
+             'active',
+             'profile_picture',
+             'user',
+             'entries',
+             'amount_of_entries',
+             },
             set(author_type.fields),
         )
         self.assertFieldType(author_type, 'name', GraphQLNonNull)
@@ -218,6 +225,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             query {
                 author(id: %d) {
                     name
+                    amount_of_entries
                     age
                 }
             }
@@ -232,7 +240,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
         self.assertHttpOK(response)
         author_data = json.loads(response.content)['data']['author']
         self.assertEqual(
-            {'name': 'SCOTT', 'age': 28},
+            {'name': 'SCOTT', 'age': 28, 'amount_of_entries': 0},
             author_data,
         )
 

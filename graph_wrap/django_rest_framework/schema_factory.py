@@ -76,24 +76,6 @@ class SchemaFactory(object):
         type_mapping = dict()
         non_root_types = []
         for api in self._apis:
-            """
-            Here api is a DRF viewset. The related fields might not necessarily
-            correspond to views. For such fields, can we build an object type
-            which is then *not* part of the Query? 
-            These can be added via the optional 'types' argument to 
-            graphene.Schema. Open questions:
-             - How will we name them? {model}_type might interfere with
-               how we name the viewsets?
-             - Will the recursive nature of having to define types
-               like this mean this gets too slow?
-             - How can we actually build them? If the fields are
-               NestedSerializer instances then we have something to
-               go by. Maybe we can dynamically make them nested by
-               adding a depth? Need to be careful to remove that, and
-               might not be thread safe?
-               See https://stackoverflow.com/questions/9541025/how-to-copy-a-python-class
-            
-            """
             api_transformer = ApiTransformer(api, type_mapping=type_mapping)
             root_type = api_transformer.root_type()
             query_attributes = QueryAttributes(api, root_type)
