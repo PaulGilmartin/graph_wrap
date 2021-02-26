@@ -7,3 +7,4 @@
 *. Ensure we can run with only one of tastypie or DRF installed
 *. Factor out shared logic
 *  required fields 
+* Serializers which don't inherit from ModelSerializer

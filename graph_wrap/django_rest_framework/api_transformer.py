@@ -116,12 +116,14 @@ class FieldTransformer:
     @classmethod
     def get_transformer(cls, field, type_mapping):
         """
-from rest_framework.fields import (  # NOQA # isort:skip
-    , , ChoiceField (MultipleChoiceField), , , ,
-    , DurationField, , Field, FileField (ImageField), FilePathField, ,
-    HiddenField, , ,, IntegerField,,
-    ListField, ModelField,, ReadOnlyField,
-    , SerializerMethodField,, TimeField,, UUIDField,
+        these map to generic obj:
+
+        from rest_framework.fields import (  # NOQA # isort:skip
+            , , ChoiceField (MultipleChoiceField), , , ,
+            , DurationField, , Field, FileField (ImageField), FilePathField, ,
+            HiddenField, , ,,,,
+            , ModelField,, ReadOnlyField,
+            , SerializerMethodField,, TimeField,, UUIDField,
 
 )        """
         if hasattr(field, 'child') and isinstance(
