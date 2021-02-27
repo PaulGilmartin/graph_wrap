@@ -26,13 +26,9 @@ class QueryResolver(GrapheneFieldResolver):
         response_json = json.loads(response.content or '{}')
         return response_json
 
-    def _build_selected_fields_cls(self, api):
-        # is this __name__ working?
-        # Main issue with this is that it may fail type checking
-        # in user code.
-        # Possible alternative is to bind this __init__
-        # as we did the tastypie dehydrate?
-        class SelectedFieldsSerializer(api.serializer_class):
+    def _build_selected_fields_api(self):
+
+        class SelectedFieldsSerializer(self._api.serializer_class):
 
             __name__ = self._api.__class__.serializer_class.__name__
 
@@ -54,7 +50,7 @@ class QueryResolver(GrapheneFieldResolver):
                         continue
                     self._set_selected_fields(field, selected_fields[field_name])
 
-        class SelectedFieldsView(api.__class__):
+        class SelectedFieldsView(self._api.__class__):
             serializer_class = SelectedFieldsSerializer
 
         return SelectedFieldsView
@@ -75,7 +71,7 @@ class AllItemsQueryResolver(QueryResolver):
         return response_json
 
     def rest_api_resolver_method(self, **kwargs):
-        selected_fields_cls = self._build_selected_fields_cls(self._api)
+        selected_fields_cls = self._build_selected_fields_api()
         return selected_fields_cls.as_view(
             actions={'get': 'list'},
             suffix='List',
@@ -97,7 +93,7 @@ class SingleItemQueryResolver(QueryResolver):
     """
 
     def rest_api_resolver_method(self, **kwargs):
-        selected_fields_cls = self._build_selected_fields_cls(self._api)
+        selected_fields_cls = self._build_selected_fields_api()
         return partial(
             selected_fields_cls.as_view(
                 actions={'get': 'retrieve'},
