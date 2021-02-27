@@ -1,5 +1,5 @@
 *. SelectedFieldsClass will fail type checks 
-*. Handle SerializerMethodField
+*. (DONE) Handle SerializerMethodField
 *  (DONE) Handle custom serialization of model fields (se https://stackoverflow.com/questions/37798208/django-rest-framework-custom-serializer-method)
 *. Test directives
 *. Decide what to do about handling custom field types
@@ -9,3 +9,4 @@
 *  required fields 
 * Serializers which don't inherit from ModelSerializer
 * check write only fields
+* Different routers? Not ModelViewSet?

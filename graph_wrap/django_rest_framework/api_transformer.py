@@ -57,12 +57,12 @@ class SerializerTransformer(object):
     def __init__(
             self,
             serializer,
-            type_mapping,
+            type_mapping=None,
             graphene_type_name='',
     ):
         self._serializer = serializer
         self._model_name = self._serializer.Meta.model.__name__.lower()
-        self.type_mapping = type_mapping
+        self.type_mapping = type_mapping if type_mapping is not None else dict()
         self._graphene_type_name = (
                 graphene_type_name or self._build_graphene_type_name())
         self._graphene_object_type_class_attrs = dict()
@@ -105,13 +105,11 @@ class SerializerTransformer(object):
 
 
 class FieldTransformer:
-    _graphene_type = None
+    graphene_type = None
 
-    def __init__(self, field, type_mapping):
-        # these arguments couple it a bit too much, can we improve?
+    def __init__(self, field, type_mapping=None):
         self._field = field
-        self.type_mapping = type_mapping
-
+        self.type_mapping = type_mapping if type_mapping is not None else dict()
 
     @classmethod
     def get_transformer(cls, field, type_mapping):
@@ -156,7 +154,7 @@ class FieldTransformer:
 
 class ScalarValuedFieldTransformer(FieldTransformer):
     def graphene_field(self):
-        return self._graphene_type(
+        return self.graphene_type(
             name=self._graphene_field_name(),
             required=self._graphene_field_required(),
             resolver=self.graphene_field_resolver_method(),
@@ -164,7 +162,7 @@ class ScalarValuedFieldTransformer(FieldTransformer):
 
 
 class RelatedValuedFieldTransformer(FieldTransformer):
-    def __init__(self, field, type_mapping):
+    def __init__(self, field, type_mapping=None):
         super(RelatedValuedFieldTransformer, self).__init__(
             field, type_mapping)
         self._field_class = field.__class__
@@ -173,7 +171,7 @@ class RelatedValuedFieldTransformer(FieldTransformer):
     def graphene_field(self):
         wrapper = graphene.List if self._is_to_many else graphene.Field
         graphene_field = wrapper(
-            self._graphene_type,
+            self.graphene_type,
             name=self._graphene_field_name(),
             required=self._graphene_field_required(),
             resolver=self.graphene_field_resolver_method(),
@@ -181,7 +179,7 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         return graphene_field
 
     @property
-    def _graphene_type(self):
+    def graphene_type(self):
         # Needs to be lazy since at this point the related
         # type may not yet have been created
         return lambda: self.type_mapping[self._build_graphene_type_name()]
@@ -200,30 +198,31 @@ class RelatedValuedFieldTransformer(FieldTransformer):
 
 
 class GenericValuedFieldTransformer(ScalarValuedFieldTransformer):
-    _graphene_type = GenericScalar
+    graphene_type = GenericScalar
 
 
 class StringValuedFieldTransformer(ScalarValuedFieldTransformer):
-    _graphene_type = graphene.String
+    graphene_type = graphene.String
 
 
 class IntegerValuedFieldTransformer(ScalarValuedFieldTransformer):
-    _graphene_type = graphene.Int
+    graphene_type = graphene.Int
 
 
 class FloatValuedFieldTransformer(ScalarValuedFieldTransformer):
-    _graphene_type = graphene.Float
+    graphene_type = graphene.Float
 
 
 class BooleanValuedFieldTransformer(ScalarValuedFieldTransformer):
-    _graphene_type = graphene.Boolean
+    graphene_type = graphene.Boolean
 
 
 class DecimalValuedFieldTransformer(ScalarValuedFieldTransformer):
-    _graphene_type = graphene.Decimal
+    graphene_type = graphene.Decimal
 
 
 class Dict(graphene.Scalar):
+    # replace by graphene.JSONString?
     @staticmethod
     def serialize(dt):
         if isinstance(dt, six.string_types):
@@ -232,15 +231,15 @@ class Dict(graphene.Scalar):
 
 
 class DictValuedFieldTransformer(ScalarValuedFieldTransformer):
-    _graphene_type = Dict
+    graphene_type = Dict
 
 
 class ListValuedFieldTransformer(FieldTransformer):
-    _graphene_type = GenericScalar
+    graphene_type = GenericScalar
 
     def graphene_field(self):
         return graphene.List(
-            self._graphene_type,
+            self.graphene_type,
             name=self._graphene_field_name(),
             required=self._graphene_field_required(),
             resolver=self.graphene_field_resolver_method(),
@@ -249,5 +248,5 @@ class ListValuedFieldTransformer(FieldTransformer):
 
 class ListOfStringsValuedFieldTransformer(
         ListValuedFieldTransformer):
-    _graphene_type = graphene.String
+    graphene_type = graphene.String
 
