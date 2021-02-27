@@ -6,7 +6,8 @@ from tests.models import Author, Post, Media
 
 
 class AuthorResource(ModelResource):
-    posts = fields.ManyToManyField('tests.tastypie_api.api.PostResource', attribute='post_set')
+    posts = fields.ManyToManyField(
+        'tests.tastypie_api.api.PostResource', attribute='entries')
 
     class Meta:
         queryset = Author.objects.all()
