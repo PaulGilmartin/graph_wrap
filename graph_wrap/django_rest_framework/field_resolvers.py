@@ -1,30 +1,15 @@
 from __future__ import unicode_literals
 
-import copy
-
-import json
 from functools import partial
 
-from graph_wrap.graphql_transformer import transform_graphql_resolve_info
-from graph_wrap.shared.field_resolvers import GrapheneFieldResolver
+from graph_wrap.shared.field_resolvers import QueryResolverBase
 
 
-class QueryResolver(GrapheneFieldResolver):
-    def __init__(self, field_name, api):
-        super(QueryResolver, self).__init__(field_name)
-        self._api = copy.deepcopy(api)
-
-    def rest_api_resolver_method(self, **kwargs):
-        pass
-
-    def __call__(self, root, info, **kwargs):
-        get_request = transform_graphql_resolve_info(
-            self._field_name, info, **kwargs)
+class QueryResolver(QueryResolverBase):
+    def _get_response(self, request, **kwargs):
         resolver = self.rest_api_resolver_method(**kwargs)
-        response = resolver(get_request).render()
-        # handle bad status codes
-        response_json = json.loads(response.content or '{}')
-        return response_json
+        response = resolver(request)
+        return response.render()
 
     def _build_selected_fields_api(self):
 
