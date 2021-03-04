@@ -1,9 +1,11 @@
 from __future__ import unicode_literals
 
 import graphene
+from django.conf import settings
 from graphene_django.settings import perform_import
 from tastypie.resources import ModelResource
 
+from graph_wrap.shared.schema_factory import get_query_attributes
 from .field_resolvers import (
     AllItemsQueryResolver,
     SingleItemQueryResolver,
@@ -34,7 +36,7 @@ class SchemaFactory(object):
         self._apis = apis
 
     @classmethod
-    def create_from_api(cls, api):
+    def create_from_api(cls):
         # change name. Maybe make this whole class into a function?
         """
         Create a schema from the tastypie API instance.
@@ -42,17 +44,25 @@ class SchemaFactory(object):
         Can pass either the full python path of the API
         instance or an Api instance itself.
         """
-        api = perform_import(api, '')
+        api = perform_import(settings.TASTYPIE_API_PATH, '')
         resources = api._registry.values()
         return cls(resources).create()
 
     def create(self):
         query_class_attrs = dict()
         for resource in self._usable_apis():
-            query_attributes = QueryAttributes(resource)
-            query_class_attrs.update(**query_attributes.to_dict())
+            graphene_type = transform_api(resource)
+            query_attributes = get_query_attributes(
+                resource,
+                resource._meta.resource_name,
+                graphene_type,
+                SingleItemQueryResolver,
+                AllItemsQueryResolver,
+                orm_filters=graphene.String(name='orm_filters'),
+            )
+            query_class_attrs.update(**query_attributes)
             self.api_class_to_schema[resource.__class__] = (
-                query_attributes.graphene_type)
+                graphene_type)
         Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)
         return graphene.Schema(query=Query)
 
@@ -61,53 +71,4 @@ class SchemaFactory(object):
             resource for resource in self._apis if
             issubclass(resource.__class__, ModelResource)
         ]
-
-
-class QueryAttributes(object):
-    """Create the graphene Query class attributes relevant to a resource."""
-
-    def __init__(self, api):
-        self._api = api
-        self.graphene_type = transform_api(api)
-        self._single_item_field_name = api._meta.resource_name
-        self._all_items_field_name = 'all_{}s'.format(
-            self._single_item_field_name)
-        self._single_item_resolver_name = 'resolve_{}'.format(
-            self._single_item_field_name)
-        self._all_items_resolver_name = 'resolve_{}'.format(
-            self._all_items_field_name)
-
-    def to_dict(self):
-        return {
-            self._single_item_field_name: self._single_item_query_field(),
-            self._all_items_field_name: self._all_items_query_field(),
-            self._single_item_resolver_name: self._single_item_query_resolver(),
-            self._all_items_resolver_name: self._all_items_query_resolver(),
-        }
-
-    def _all_items_query_field(self):
-        return graphene.List(
-            self.graphene_type,
-            orm_filters=graphene.String(name='orm_filters'),
-            name=self._all_items_field_name,
-        )
-
-    def _all_items_query_resolver(self):
-        return AllItemsQueryResolver(
-            field_name=self._all_items_field_name,
-            api=self._api,
-        )
-
-    def _single_item_query_field(self):
-        return graphene.Field(
-            self.graphene_type,
-            id=graphene.Int(required=True),
-            name=self._single_item_field_name,
-        )
-
-    def _single_item_query_resolver(self):
-        return SingleItemQueryResolver(
-            field_name=self._single_item_field_name,
-            api=self._api,
-        )
 

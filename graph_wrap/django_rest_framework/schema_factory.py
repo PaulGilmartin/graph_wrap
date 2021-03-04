@@ -2,9 +2,9 @@ from __future__ import unicode_literals
 from rest_framework.schemas.generators import EndpointEnumerator
 from rest_framework.schemas.generators import BaseSchemaGenerator
 import graphene
-from graphene_django.settings import perform_import
 from rest_framework import viewsets
 
+from graph_wrap.shared.schema_factory import get_query_attributes
 from .field_resolvers import (
     AllItemsQueryResolver,
     SingleItemQueryResolver,
@@ -17,14 +17,13 @@ class SchemaFactory(object):
         self._apis = apis
 
     @classmethod
-    def create_from_api(cls, api=None):  # remove api arg when tastypie onboarded
+    def create_from_api(cls):
         api_endpoints = EndpointEnumerator().get_api_endpoints()
         generator = BaseSchemaGenerator()
         views = []
         for endpoint in api_endpoints:
             _, method, view_callback = endpoint
             view = generator.create_view(view_callback, method)
-
             if cls._usable_viewset(view):
                 if view.__class__ not in [v.__class__ for v in views]:
                     for method, action in view.action_map.items():
@@ -48,30 +47,16 @@ class SchemaFactory(object):
         for api in self._apis:
             api_transformer = ApiTransformer(api, type_mapping=type_mapping)
             root_type = api_transformer.root_type()
-            query_attributes = get_query_attributes(api, root_type)
+            query_attributes = get_query_attributes(
+                api,
+                api.basename,
+                root_type,
+                SingleItemQueryResolver,
+                AllItemsQueryResolver,
+            )
             query_class_attrs.update(**query_attributes)
             non_root_types.extend(api_transformer.non_root_types())
             type_mapping = api_transformer.type_mapping
         Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)
         schema = graphene.Schema(query=Query, types=non_root_types)
         return schema
-
-
-def get_query_attributes(api, graphene_type):
-    single_item_field_name = api.basename
-    all_items_field_name = 'all_{}s'.format(single_item_field_name)
-    single_item_resolver_name = 'resolve_{}'.format(single_item_field_name)
-    all_items_resolver_name = 'resolve_{}'.format(all_items_field_name)
-    return {
-        single_item_field_name: graphene.Field(
-            graphene_type,
-            id=graphene.Int(required=True),
-            name=single_item_field_name,
-        ),
-        all_items_field_name: graphene.List(
-            graphene_type, name=all_items_field_name),
-        single_item_resolver_name: SingleItemQueryResolver(
-            field_name=single_item_field_name, api=api),
-        all_items_resolver_name: AllItemsQueryResolver(
-            field_name=all_items_field_name, api=api),
-    }
