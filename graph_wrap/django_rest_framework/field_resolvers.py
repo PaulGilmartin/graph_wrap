@@ -76,7 +76,6 @@ class SingleItemQueryResolver(QueryResolver):
     (This  to a GET request to the /profile/{id} detail endpoint
      in REST terms)
     """
-
     def rest_api_resolver_method(self, **kwargs):
         selected_fields_cls = self._build_selected_fields_api()
         return partial(
