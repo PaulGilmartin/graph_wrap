@@ -5,7 +5,7 @@ import graphene
 from rest_framework import viewsets
 
 from graph_wrap.shared.schema_factory import get_query_attributes
-from .field_resolvers import (
+from .query_resolver import (
     AllItemsQueryResolver,
     SingleItemQueryResolver,
 )

@@ -18,7 +18,7 @@ from graphene import (
 )
 from graphene.types.generic import GenericScalar
 
-from graph_wrap.shared.field_resolvers import JSONResolver
+from graph_wrap.shared.query_resolver import JSONResolver
 
 
 def transform_api(tastypie_resource):

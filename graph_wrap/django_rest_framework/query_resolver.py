@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from functools import partial
 
-from graph_wrap.shared.field_resolvers import QueryResolverBase
+from graph_wrap.shared.query_resolver import QueryResolverBase
 
 
 class QueryResolver(QueryResolverBase):

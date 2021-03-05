@@ -5,7 +5,7 @@ from functools import partial
 
 from tastypie.exceptions import BadRequest
 
-from graph_wrap.shared.field_resolvers import QueryResolverBase
+from graph_wrap.shared.query_resolver import QueryResolverBase
 
 
 class QueryResolver(QueryResolverBase):

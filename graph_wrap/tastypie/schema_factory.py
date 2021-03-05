@@ -6,7 +6,7 @@ from graphene_django.settings import perform_import
 from tastypie.resources import ModelResource
 
 from graph_wrap.shared.schema_factory import get_query_attributes
-from .field_resolvers import (
+from .query_resolver import (
     AllItemsQueryResolver,
     SingleItemQueryResolver,
 )

@@ -10,3 +10,4 @@
 * check write only fields
 * Different routers? Not ModelViewSet?
 *. Test directives
+* Test Hyperlinked
