@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from django.contrib.auth.models import User
-from rest_framework import serializers, viewsets
+from rest_framework import serializers, viewsets, filters
 
 from tests.models import Author, Post
 
@@ -58,3 +58,5 @@ class AuthorViewSet(viewsets.ModelViewSet):
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['content', 'author__name']
