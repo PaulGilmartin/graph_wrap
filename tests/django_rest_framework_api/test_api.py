@@ -338,7 +338,8 @@ class TestGraphWrapApi(TestGraphWrapBase):
     def test_get_rest_api(self):
         response = self.client.get(
             '/django_rest/post/',
-            content_type="application/json",
+            content_type='application/json',
+            data={'name': 'Paul'}
         )
         self.assertHttpOK(response)
 
