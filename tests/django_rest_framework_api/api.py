@@ -60,3 +60,6 @@ class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['content', 'author__name']
+
+    def get_queryset(self):
+        return super(PostViewSet, self).get_queryset()
