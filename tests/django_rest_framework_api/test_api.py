@@ -5,7 +5,7 @@ import json
 
 from django.contrib.auth.models import User
 from graphene.types.definitions import GrapheneObjectType
-from graphql import GraphQLScalarType, GraphQLNonNull
+from graphql import GraphQLScalarType, GraphQLNonNull, GraphQLList
 from tastypie.test import ResourceTestCaseMixin
 
 from django.test import TransactionTestCase
@@ -134,7 +134,8 @@ class TestSchemaFactory(TestGraphWrapBase):
         self.assertFieldTypeOfType(post_type, 'written_by', GrapheneObjectType)
 
         self.assertFieldType(post_type, 'rating', GraphQLScalarType)
-        self.assertFieldType(post_type, 'files', GraphQLScalarType)  # should be nullable list
+        self.assertFieldType(post_type, 'files', GraphQLNonNull)
+        self.assertFieldTypeOfType(post_type, 'files', GraphQLList)
 
 
 class TestGraphWrapApi(TestGraphWrapBase):
@@ -301,6 +302,35 @@ class TestGraphWrapApi(TestGraphWrapBase):
             response.content)['data']['all_posts'][0]
         self.assertEqual('My first post!', post_data['content'])
         self.assertEqual({'name': 'PAUL'}, post_data['written_by'])
+
+    def test_single_post_no_files_query(self):
+        pauls_second_post = Post.objects.create(
+            content='My Second post!',
+            author=self.paul,
+            date=datetime.datetime.now(),
+            rating=u'7.00',
+        )
+        query = '''
+            query {
+                post(id: %d) {
+                    content
+                    files {
+                        content_type
+                    }
+                    
+                }
+            }
+            ''' % pauls_second_post.pk
+        body = {"query": query}
+        request_json = json.dumps(body)
+        response = self.client.post(
+            self.graphql_endpoint,
+            request_json,
+            content_type="application/json",
+        )
+        self.assertHttpOK(response)
+        post_data = json.loads(response.content)['data']['post']
+        self.assertEqual([], post_data['files'])
 
     def test_query_with_directive(self):
         pass
