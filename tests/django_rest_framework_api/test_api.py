@@ -3,18 +3,16 @@ from __future__ import unicode_literals
 import datetime
 import json
 
+from django.test import TransactionTestCase
 from django.contrib.auth.models import User
 from graphene.types.definitions import GrapheneObjectType
 from graphql import GraphQLScalarType, GraphQLNonNull, GraphQLList
-from tastypie.test import ResourceTestCaseMixin
-
-from django.test import TransactionTestCase
 
 from graph_wrap.django_rest_framework.schema_factory import SchemaFactory
 from tests.models import Author, Post, Media
 
 
-class TestGraphWrapBase(ResourceTestCaseMixin, TransactionTestCase):
+class TestGraphWrapBase(TransactionTestCase):
     def setUp(self):
         super(TestGraphWrapBase, self).setUp()
         self.graphql_endpoint = '/django_rest/graphql/'
@@ -69,18 +67,6 @@ class TestGraphWrapBase(ResourceTestCaseMixin, TransactionTestCase):
 
 
 class TestSchemaFactory(TestGraphWrapBase):
-    """
-
-    Next things to consider:
-    0. Get required/non-null correct
-    1. Test all field types (scalar + non-scalar)
-
-    1. More assertions on the current API.
-    2. More testing with custom serialiazers?
-    3. Test using custom serializers as fields (both which are views and not)
-    5. Custom 'dehyration' methods
-    7. Integration test on localhost
-    """
     def setUp(self):
         super(TestSchemaFactory, self).setUp()
         self.schema = SchemaFactory.create_from_api()
@@ -154,7 +140,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             request_json,
             content_type="application/json",
         )
-        self.assertHttpOK(response)
+        self.assertEqual(response.status_code, 200)
         all_authors_data = json.loads(
             response.content)['data']['all_authors']
         self.assertEqual(
@@ -180,7 +166,8 @@ class TestGraphWrapApi(TestGraphWrapBase):
             request_json,
             content_type="application/json",
         )
-        self.assertHttpOK(response)
+
+        self.assertEqual(response.status_code, 200)
         all_posts_data = json.loads(
             response.content)['data']['all_posts']
         self.assertEqual(
@@ -207,7 +194,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             request_json,
             content_type="application/json",
         )
-        self.assertHttpOK(response)
+        self.assertEqual(response.status_code, 200)
         all_authors_data = json.loads(
             response.content)['data']['all_authors']
         self.assertEqual(
@@ -238,7 +225,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             request_json,
             content_type="application/json",
         )
-        self.assertHttpOK(response)
+        self.assertEqual(response.status_code, 200)
         author_data = json.loads(response.content)['data']['author']
         self.assertEqual(
             {'name': 'SCOTT', 'age': 28, 'amount_of_entries': 0},
@@ -263,7 +250,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             request_json,
             content_type="application/json",
         )
-        self.assertHttpOK(response)
+        self.assertEqual(response.status_code, 200)
         post_data = json.loads(response.content)['data']['post']
         self.assertEqual(
             {'content': self.pauls_first_post.content,
@@ -297,7 +284,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             request_json,
             content_type="application/json",
         )
-        self.assertHttpOK(response)
+        self.assertEqual(response.status_code, 200)
         post_data = json.loads(
             response.content)['data']['all_posts'][0]
         self.assertEqual('My first post!', post_data['content'])
@@ -328,7 +315,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             request_json,
             content_type="application/json",
         )
-        self.assertHttpOK(response)
+        self.assertEqual(response.status_code, 200)
         post_data = json.loads(response.content)['data']['post']
         self.assertEqual([], post_data['files'])
 
@@ -356,7 +343,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             request_json,
             content_type="application/json",
         )
-        self.assertHttpOK(response)
+        self.assertEqual(response.status_code, 200)
         all_authors_data = json.loads(
             response.content)['data']['all_posts']
         self.assertEqual(
@@ -376,7 +363,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             content_type='application/json',
             data={'search': 'Paul'}
         )
-        self.assertHttpOK(response)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(1, len(response.json()))
 
     def test_get_rest_api_detail(self):
@@ -384,4 +371,4 @@ class TestGraphWrapApi(TestGraphWrapBase):
             '/django_rest/author/{}/'.format(self.paul.pk),
             content_type="application/json",
         )
-        self.assertHttpOK(response)
+        self.assertEqual(response.status_code, 200)
