@@ -12,3 +12,4 @@
 * Test Hyperlinked
 *. Ensure we can run with only one of tastypie or DRF installed
 *. (IGNORE FOR NOW) SelectedFieldsClass will fail type checks 
+* bad status codes

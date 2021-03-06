@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from django.core.handlers.wsgi import WSGIRequest
-# Remember directives
+from rest_framework.settings import api_settings
 
 
 def transform_graphql_resolve_info(
@@ -29,45 +29,23 @@ class GraphQLResolveInfoTransformer(object):
          to the appropriate  GET request for a REST endpoint.
          """
         # TODO: Get correct path info for request
-        # Cannot use clone_request directly as it uses django
-        # Request object
         environ = self._request.environ
+        environ_overrides = dict(
+            REQUEST_METHOD='GET',
+            **environ_params
+        )
         if 'orm_filters' in self._field_kwargs:
             query_string = self._field_kwargs['orm_filters']
-            environ_overrides = dict(
-                REQUEST_METHOD='GET',
-                QUERY_STRING=query_string,
-                **environ_params
-            )
-            environ.update(environ_overrides)
-            get_request = WSGIRequest(environ)
-            get_request.user = self._request.user
-            get_request.content_type = self._request.content_type
-            return get_request
-
-        elif 'search' in self._field_kwargs:
-            environ_overrides = dict(
-                REQUEST_METHOD='GET',
-                **environ_params
-            )
-            environ.update(environ_overrides)
-            get_request = WSGIRequest(environ)
-            get_request.user = self._request.user
-            get_request.content_type = self._request.content_type
+            environ_overrides['QUERY_STRING'] = query_string
+        environ.update(environ_overrides)
+        get_request = WSGIRequest(environ)
+        get_request.user = self._request.user
+        get_request.content_type = self._request.content_type
+        if api_settings.SEARCH_PARAM in self._field_kwargs:
             query = self._request.GET.copy()
             query.update(self._field_kwargs)
             get_request.GET = query
-            return get_request
-        else:
-            environ_overrides = dict(
-                REQUEST_METHOD='GET',
-                **environ_params
-            )
-            environ.update(environ_overrides)
-            get_request = WSGIRequest(environ)
-            get_request.user = self._request.user
-            get_request.content_type = self._request.content_type
-            return get_request
+        return get_request
 
     def transform_resolve_info(self):
         """Transform ResolveInfo object into a graph-like dictionary.

@@ -14,9 +14,6 @@ class QueryResolver(QueryResolverBase):
     def _build_selected_fields_api(self):
 
         class SelectedFieldsSerializer(self._api.serializer_class):
-
-            __name__ = self._api.__class__.serializer_class.__name__
-
             def __init__(self, *args, **kwargs):
                 request = self._kwargs['context']['request']
                 selected_fields = request.environ.get('selected_fields', [])
