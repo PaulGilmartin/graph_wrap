@@ -12,7 +12,9 @@
 *. (IGNORE FOR NOW) SelectedFieldsClass will fail type checks 
 *. (POSTPONE) Test directives
 * (POSTPONE) check write only fields
-* Different routers? Not ModelViewSet?
+* (DONE) Not ModelViewSet?
+* Different routers? 
+
 * Test Hyperlinked
 * django_filter
 * test on intempus api
