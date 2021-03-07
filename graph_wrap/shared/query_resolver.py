@@ -4,6 +4,8 @@ import copy
 import json
 from abc import abstractmethod
 
+from django.http import HttpResponse
+
 from graph_wrap.graphql_transformer import transform_graphql_resolve_info
 
 
@@ -53,7 +55,8 @@ class QueryResolverBase(GrapheneFieldResolver):
         get_request = transform_graphql_resolve_info(
             self._field_name, info, **kwargs)
         response = self._get_response(get_request, **kwargs)
-        # handle bad status codes
+        if str(response.status_code).startswith('4'):
+            raise Exception(response.content)
         response_json = json.loads(response.content or '{}')
         return response_json
 
