@@ -61,7 +61,6 @@ class SerializerTransformer(object):
             graphene_type_name='',
     ):
         self._serializer = serializer
-        self._model_name = self._serializer.Meta.model.__name__.lower()
         self.type_mapping = type_mapping if type_mapping is not None else dict()
         self._graphene_type_name = (
                 graphene_type_name or self._build_graphene_type_name())
@@ -92,7 +91,7 @@ class SerializerTransformer(object):
             return '{}__{}_type'.format(model, named_field.field_name)
         else:
             return '{}_type'.format(
-                named_field.Meta.model.__name__.lower())
+                named_field.__class__.__name__.lower())
 
     def _add_field_data(self, field):
         field_transformer = FieldTransformer.get_transformer(
@@ -193,8 +192,8 @@ class RelatedValuedFieldTransformer(FieldTransformer):
             model = self._field.parent.Meta.model.__name__.lower()
             return '{}__{}_type'.format(model, self._field.field_name)
         else:
-            model = self._field.Meta.model.__name__.lower()
-            return '{}_type'.format(model)
+            return '{}_type'.format(
+                self._field.__class__.__name__.lower())
 
 
 class GenericValuedFieldTransformer(ScalarValuedFieldTransformer):

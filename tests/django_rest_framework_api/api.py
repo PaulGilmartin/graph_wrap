@@ -35,8 +35,16 @@ class AuthorSerializer(serializers.ModelSerializer):
         return obj.entries.count()
 
 
+class WrittenBySerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='get_name')
+
+    class Meta:
+        model = Author
+        fields = ['name']
+
+
 class PostSerializer(serializers.ModelSerializer):
-    written_by = AuthorSerializer(source='author')
+    written_by = WrittenBySerializer(source='author')
 
     class Meta:
         model = Post

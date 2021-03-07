@@ -28,7 +28,8 @@ class SchemaFactory(object):
             _, method, view_callback = endpoint
             view = generator.create_view(view_callback, method)
             if cls._usable_viewset(view):
-                views.append(view)
+                if view.__class__ not in [v.__class__ for v in views]:
+                    views.append(view)
         return cls(views).create()
 
     @staticmethod
