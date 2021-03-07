@@ -28,20 +28,14 @@ class SchemaFactory(object):
             _, method, view_callback = endpoint
             view = generator.create_view(view_callback, method)
             if cls._usable_viewset(view):
-                if view.__class__ not in [v.__class__ for v in views]:
-                    for method, action in view.action_map.items():
-                        # We might not need to bother setting actions?
-                        if method == 'get':
-                            handler = getattr(view, action)
-                            setattr(view, method, handler)
-                            if cls._usable_viewset(view):
-                                views.append(view)
+                views.append(view)
         return cls(views).create()
 
     @staticmethod
     def _usable_viewset(viewset):
         # Can we relax this condition at all?
-        return isinstance(viewset, viewsets.ModelViewSet)
+        return isinstance(
+            viewset, (viewsets.ModelViewSet, viewsets.ReadOnlyModelViewSet))
 
     def create(self):
         query_class_attrs = dict()
