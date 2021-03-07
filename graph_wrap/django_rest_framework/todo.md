@@ -7,14 +7,16 @@
   - (DONE) Test different versions. Summary: everything should work if we
     state that a prequisite is Django>=2.2 and djangorestframework >= 3.0.0 OR
     tastypie >= 0.14.3 and have graphene-django==2.15.0
+    - Implicit in this is that we require Python 3 (say >=3.6)
+    
 * (DONE for now) bad status codes 
 * (DONE) Test authorization
 *. (IGNORE FOR NOW) SelectedFieldsClass will fail type checks 
 *. (POSTPONE) Test directives
 * (POSTPONE) check write only fields
-* (DONE) Not ModelViewSet?
-* Different routers? 
+* (DONE) Not ModelViewSet? (must inherit from ModelViewSett or ReadOnlyModelViewSet)
+* (DONE) Different routers? (Must inherit from SimpleRouter)
 
-* Test Hyperlinked
+* (DONE)Test Hyperlinked
 * django_filter
 * test on intempus api
