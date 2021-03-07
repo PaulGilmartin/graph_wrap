@@ -4,12 +4,10 @@ import copy
 import json
 from abc import abstractmethod
 
-from django.http import HttpResponse
-
 from graph_wrap.graphql_transformer import transform_graphql_resolve_info
 
 
-class GrapheneFieldResolver(object):
+class GrapheneFieldResolver:
     """Callable which acts as resolver for a graphene field.
 
     Note: Callable object, and not simply a function, for two
@@ -35,11 +33,8 @@ class GrapheneFieldResolver(object):
 class JSONResolver(GrapheneFieldResolver):
     def __call__(self, parent, info, **kwargs):
         """Resolves the appropriate field from the parent JSON."""
-        try:
-            if parent:
-                return parent[self._field_name]
-        except Exception:
-            pass
+        if parent:
+            return parent[self._field_name]
 
 
 class QueryResolverBase(GrapheneFieldResolver):

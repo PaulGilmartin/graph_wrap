@@ -15,7 +15,7 @@ from .query_resolver import (
 from .api_transformer import ApiTransformer
 
 
-class SchemaFactory(object):
+class SchemaFactory:
     def __init__(self, apis):
         self._apis = apis
 

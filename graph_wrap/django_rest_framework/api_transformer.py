@@ -11,7 +11,7 @@ from graph_wrap.shared.query_resolver import JSONResolver
 import six
 
 
-class ApiTransformer(object):
+class ApiTransformer:
     def __init__(self, api, type_mapping=None):
         self._api = api
         self._root_serializer = api.get_serializer()
