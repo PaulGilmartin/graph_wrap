@@ -272,7 +272,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             fragment postFragment on post_type {
                 content
             }
-            fragment authorFragment on writtenbyserializer_type {
+            fragment authorFragment on author_type_2 {
                 name
             }
             '''

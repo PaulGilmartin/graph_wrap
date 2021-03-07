@@ -90,8 +90,13 @@ class SerializerTransformer(object):
             model = named_field.parent.Meta.model.__name__.lower()
             return '{}__{}_type'.format(model, named_field.field_name)
         else:
-            return '{}_type'.format(
-                named_field.__class__.__name__.lower())
+            model = named_field.Meta.model.__name__.lower()
+            type_name = '{}_type'.format(model)
+            types_for_model = [
+                t for t in self.type_mapping if t.startswith(type_name)]
+            if types_for_model:
+                type_name = '{}_{}'.format(type_name, len(types_for_model) + 1)
+            return type_name
 
     def _add_field_data(self, field):
         field_transformer = FieldTransformer.get_transformer(
@@ -181,7 +186,8 @@ class RelatedValuedFieldTransformer(FieldTransformer):
     def graphene_type(self):
         # Needs to be lazy since at this point the related
         # type may not yet have been created
-        return lambda: self.type_mapping[self._build_graphene_type_name()]
+        name = self._build_graphene_type_name()
+        return lambda: self.type_mapping[name]
 
     def _build_graphene_type_name(self):
         if isinstance(self._field, ListSerializer):
@@ -192,8 +198,13 @@ class RelatedValuedFieldTransformer(FieldTransformer):
             model = self._field.parent.Meta.model.__name__.lower()
             return '{}__{}_type'.format(model, self._field.field_name)
         else:
-            return '{}_type'.format(
-                self._field.__class__.__name__.lower())
+            model = self._field.Meta.model.__name__.lower()
+            type_name = '{}_type'.format(model)
+            types_for_model = [
+                t for t in self.type_mapping if t.startswith(type_name)]
+            if types_for_model:
+                type_name = '{}_{}'.format(type_name, len(types_for_model) + 1)
+            return type_name
 
 
 class GenericValuedFieldTransformer(ScalarValuedFieldTransformer):
