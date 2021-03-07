@@ -3,14 +3,17 @@
 *. (DONE) Decide what to do about letting user add their own field types - right now we use generic (DONE: leave for v2)
 *  (DONE) required fields 
 *  filters ((DONE) start with supporting https://www.django-rest-framework.org/api-guide/filtering/#searchfilter, then maybe the django_filter BE?)
+* Versioning:
+  - (DONE) Can run with only tastypie or only DRF
+  - (DONE) Test different versions. Summary: everything should work if we
+    state that a prequisite is Django>=2.2 and djangorestframework >= 3.0.0 OR
+    tastypie >= 0.14.3 and have graphene-django==2.15.0
+* Different routers? Not ModelViewSet?
+* Test Hyperlinked
+* bad status codes
+* django_filter
+* Test authorization
+*. (IGNORE FOR NOW) SelectedFieldsClass will fail type checks 
 *. (POSTPONE) Test directives
 * (POSTPONE) check write only fields
 
-* next: django_filter
-*. Ensure we can run with only one of tastypie or DRF installed.
-  - next: DRF solo done. Try tastypie solo next.
-* Find versions of graphene, django rest and tastypie
-* Different routers? Not ModelViewSet?
-* Test Hyperlinked
-*. (IGNORE FOR NOW) SelectedFieldsClass will fail type checks 
-* bad status codes

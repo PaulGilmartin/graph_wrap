@@ -10,7 +10,7 @@ class GraphQLResource(Resource):
         allowed_methods = ['post']
 
     def dispatch(self, request_type, request, **kwargs):
-        from graph_wrap import schema
+        from graph_wrap.tastypie import schema
         schema = schema()
         view = GraphQLView.as_view(schema=schema)
         return view(request)

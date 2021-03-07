@@ -1,8 +1,8 @@
+from django.views.decorators.http import require_http_methods
 from graphene_django.views import GraphQLView
-from rest_framework.decorators import api_view
 
 
-@api_view(['POST'])
+@require_http_methods(['POST'])
 def graphql_view(request):
     from graph_wrap.tastypie import schema
     schema = schema()

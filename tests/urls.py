@@ -13,7 +13,7 @@ except ImportError:
     pass
 else:
     urlpatterns.append(path(r'tastypie/', include(api.urls)))
-    urlpatterns.append(path(r'tastypie/graphql/', view=graphql_view))
+    urlpatterns.append(path(r'tastypie/v1/graphql/', view=graphql_view))
 try:
     from tests.django_rest_framework_api.urls import router
     from graph_wrap.django_rest_framework.graphql_view import graphql_view

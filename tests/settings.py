@@ -39,8 +39,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
 ]
+
+try:
+    import rest_framework
+except ImportError:
+    pass
+else:
+    INSTALLED_APPS.append('rest_framework')
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

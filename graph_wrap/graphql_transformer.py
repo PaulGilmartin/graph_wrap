@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 from django.core.handlers.wsgi import WSGIRequest
-from rest_framework.settings import api_settings
 
 
 def transform_graphql_resolve_info(
@@ -41,10 +40,15 @@ class GraphQLResolveInfoTransformer(object):
         get_request = WSGIRequest(environ)
         get_request.user = self._request.user
         get_request.content_type = self._request.content_type
-        if api_settings.SEARCH_PARAM in self._field_kwargs:
-            query = self._request.GET.copy()
-            query.update(self._field_kwargs)
-            get_request.GET = query
+        try:
+            from rest_framework.settings import api_settings
+        except ImportError:
+            pass
+        else:
+            if api_settings.SEARCH_PARAM in self._field_kwargs:
+                query = self._request.GET.copy()
+                query.update(self._field_kwargs)
+                get_request.GET = query
         return get_request
 
     def transform_resolve_info(self):
