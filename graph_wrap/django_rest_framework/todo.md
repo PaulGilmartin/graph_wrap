@@ -20,4 +20,3 @@
 * (DONE)Test Hyperlinked
 * django_filter
 * test on intempus api
-* Condition: Serializers need to have unique class names
