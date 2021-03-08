@@ -41,6 +41,7 @@ Here are a couple of limitations of the GraphQL API produced by GraphWrap:
 * Any custom serializer fields which don't inherit from one of the [standard DRF serializer fields](
 https://www.django-rest-framework.org/api-guide/fields/) will be mapped to a graphene GenericScalar.
 
+* Works only for JSON serialization.
 
 # GraphWrap for the Django REST Framework
 
@@ -92,12 +93,10 @@ a simple concrete example.
 
 
 ### Set-up
-Suppose we have the following basic django models and corresponding tastypie resources (
+Suppose we have the following basic django models and corresponding DRF serializers and viewsets (
 a fully executable version of this example can be found in graph_wrap.tests):
 
 ```
-# models.py
-
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -193,44 +192,16 @@ class PostViewSet(viewsets.ReadOnlyModelViewSet):
 ```
 
 If we wish to layer our REST resources with a GraphQL interface, we can follow the instructions above in the
-"Quickstart" guide. Start by registering our GraphQLResource with the tastypie Api instance:
+"Quickstart" guide where we import the `graphql_view` and expose it via the `/graphql` url:
 
-```
-# urls.py
-
-from django.contrib import admin
-from django.urls import path, include
-from tastypie.api import Api
-
-from graph_wrap import GraphQLResource
-from tests.api import AuthorResource, PostResource, MediaResource
-
-
-api = Api('v1')
-api.register(AuthorResource())
-api.register(PostResource())
-api.register(MediaResource())
-api.register(GraphQLResource())
-
-urlpatterns = [
-    path(r'', include(api.urls)),
-    path('admin/', admin.site.urls),
-]
-```
-
-Next, add the `TASTYPIE_API_PATH` to the django settings module so GraphWrap can locate the tastypie Api:
-
-```
-TASTYPIE_API_PATH = 'tests.urls.api'
-```
 
 ### Understanding the Schema
-With these simple changes, we can now query the  `/grahql` endpoint with GraphQL queries. The structure
+With these simple changes, we can now query the  `/graphql` endpoint with GraphQL queries. The structure
 queries can take, as with all GraphQL APIs, is dictated by the shape of the underlying schema (which, in this case, is
 dictated by the shape of the tastypie API). To see what the schema looks like, run the following:
 
 ```
->>> from graph_wrap import schema
+>>> from graph_wrap.django_rest_framework import schema
 >>> schema = schema()
 >>> print(schema)
 
