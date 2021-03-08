@@ -360,7 +360,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
         )
         query = '''
             query {
-                all_posts(orm_filters: "author__name=28")) {
+                all_posts(orm_filters: "author__name=Paul") {
                     content
                 }
             }
