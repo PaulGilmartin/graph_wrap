@@ -18,5 +18,5 @@
 * (DONE) Different routers? (Must inherit from SimpleRouter)
 
 * (DONE)Test Hyperlinked
-* django_filter
+* (DONE) django_filter
 * test on intempus api
