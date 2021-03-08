@@ -70,6 +70,3 @@ class PostViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['content', 'author__name']
     filterset_fields = ['author__name', 'content']
-
-    def get_queryset(self):
-        return super(PostViewSet, self).get_queryset()

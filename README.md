@@ -16,7 +16,7 @@ GraphQL-queryable interface.
 REST based API and know that the graphql schema will be kept up-to-date automatically. 
 
 * Since the graphql layer is using the REST API under-the-hood, you can be sure that important things
-like **serialization**, **authentication** and **authorization** will be  consistent between your REST view
+like **serialization**, **authentication**, **authorization** and **filtering** will be consistent between your REST view
 and the corresponding GraphQL type.
  
 * No longer need to worry about overexposing nested views - the client can simply
@@ -49,7 +49,7 @@ https://www.django-rest-framework.org/api-guide/fields/) will be mapped to a gra
 ### Core Requirements
 Before using this library, you must be using Python 3.6 (or later) and have the following installed:
 
-1. `Django >=2.2`.
+1. `Django >=2.2`
 2. `djangorestframework>=3.0.0`
 
 
@@ -85,19 +85,6 @@ urlpatterns = [
 ```
 
 
-### Settings
-
-In order for GraphQL to be able to build the GraphQL schema from the tastypie Api instance, it needs
-to know where that instance lives in your project. To allow GraphWrap to locate the Api instance, we can simply
-add the full path of the instance to our django settings module. For example:
-
-```
-# tests.settings.py
-
-TASTYPIE_API_PATH = 'tests.urls.api'
-```
-
-
 ## Documentation (by Example)
 
 In this section we give a brief overview of how to use GraphWrap via examining
@@ -111,52 +98,98 @@ a fully executable version of this example can be found in graph_wrap.tests):
 ```
 # models.py
 
-class Author(models.Model):
+from django.contrib.auth.models import User
+from django.db import models
+
+
+class Media(models.Model):
     name = models.TextField()
-    age = models.TextField()
+    content_type = models.TextField(null=True)
+    size = models.BigIntegerField(null=True)
+
+
+class Author(models.Model):
+    user = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
+    name = models.TextField()
+    age = models.IntegerField(null=True)
+    active = models.BooleanField(default=True)
+    profile_picture = models.ForeignKey(
+        Media, null=True, on_delete=models.PROTECT)
+
+    def get_name(self):
+        # Use to test custom additional serialization
+        return self.name.upper()
 
 
 class Post(models.Model):
     content = models.TextField()
     date = models.DateTimeField()
-    author = models.ForeignKey(Author, null=True, on_delete=models.SET_NULL)
+    author = models.ForeignKey(
+        Author, null=True, on_delete=models.SET_NULL, related_name='entries')
     files = models.ManyToManyField('Media')
-
-
-class Media(models.Model):
-    name = models.TextField()
-    content_type = models.TextField()
-    size = models.BigIntegerField()
+    rating = models.DecimalField(null=True, decimal_places=20, max_digits=40)
 
 
 # api.py
 
-class AuthorResource(ModelResource):
-    posts = fields.ManyToManyField('tests.api.PostResource', attribute='post_set')
+from django.contrib.auth.models import User
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import serializers, viewsets, filters
+
+from tests.models import Author, Post
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        exclude = ('password',)
+
+
+class AuthorSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    entries = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Post.objects.all())
+    amount_of_entries = serializers.SerializerMethodField()
+    name = serializers.CharField(source='get_name')
 
     class Meta:
-        queryset = Author.objects.all()
-        resource_name = 'author'
-        filtering = {
-            'age': ('exact',),
-            'name': ('exact',),
-        }
+        model = Author
+        fields = ['name', 'age', 'active', 'profile_picture',
+         'user', 'entries', 'amount_of_entries']
+
+    def get_amount_of_entries(self, obj):
+        return obj.entries.count()
 
 
-class PostResource(ModelResource):
-    author = fields.ForeignKey(AuthorResource, attribute='author', null=True)
-    files = fields.ManyToManyField('tests.api.MediaResource', attribute='files')
-    date = fields.DateTimeField('date')
+class WrittenBySerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='get_name')
 
     class Meta:
-        queryset = Post.objects.all()
-        resource_name = 'post'
+        model = Author
+        fields = ['name']
 
 
-class MediaResource(ModelResource):
+class PostSerializer(serializers.ModelSerializer):
+    written_by = WrittenBySerializer(source='author')
+
     class Meta:
-        queryset = Media.objects.all()
-        resource_name = 'media'
+        model = Post
+        depth = 3
+        fields = ['content', 'written_by', 'date', 'rating', 'files']
+       
+
+class AuthorViewSet(viewsets.ModelViewSet):
+    queryset = Author.objects.all()
+    serializer_class = AuthorSerializer
+
+
+class PostViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['content', 'author__name']
+    filterset_fields = ['author__name', 'content']
+
 ```
 
 If we wish to layer our REST resources with a GraphQL interface, we can follow the instructions above in the
