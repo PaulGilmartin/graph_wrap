@@ -351,7 +351,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             len(all_authors_data),
         )
 
-    def test_get_rest_api(self):
+    def test_get_rest_api_with_search_filter(self):
         Post.objects.create(
             content='Blah',
             author=self.scott,
@@ -362,6 +362,21 @@ class TestGraphWrapApi(TestGraphWrapBase):
             '/django_rest/post/',
             content_type='application/json',
             data={'search': 'Paul'}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(1, len(response.json()))
+
+    def test_get_rest_api_with_django_filter(self):
+        Post.objects.create(
+            content='Blah',
+            author=self.scott,
+            date=datetime.datetime.now(),
+            rating=u'7.00',
+        )
+        response = self.client.get(
+            '/django_rest/post/',
+            content_type='application/json',
+            data={'author__name': 'Paul'}
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(1, len(response.json()))
