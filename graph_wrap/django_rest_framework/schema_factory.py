@@ -68,5 +68,14 @@ class SchemaFactory:
             if issubclass(filt, SearchFilter):
                 filter_args[api_settings.SEARCH_PARAM] = graphene.String(
                     name=api_settings.SEARCH_PARAM)
+            try:
+                import django_filters.rest_framework
+            except ImportError:
+                continue
+            else:
+                from django_filters.rest_framework import DjangoFilterBackend
+                if issubclass(filt, DjangoFilterBackend):
+                    filter_args['orm_filters'] = graphene.String(
+                        name='orm_filters')
         return filter_args
 
