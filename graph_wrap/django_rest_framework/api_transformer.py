@@ -117,19 +117,10 @@ class FieldTransformer:
 
     @classmethod
     def get_transformer(cls, field, type_mapping):
-        from graph_wrap.django_rest_framework.schema_factory import SchemaFactory
-
         if hasattr(field, 'child') and isinstance(
                 field.child, serializers.ModelSerializer):
             # for ListSerializers from M2M fields
             return RelatedValuedFieldTransformer(field, type_mapping)
-        if isinstance(field, serializers.HyperlinkedRelatedField):
-            views = SchemaFactory.usable_views()
-            related_view_name = field.view_name.split('-')[0]
-            related_view_set = next(
-                (v for v in views if v.basename == related_view_name), None)
-            if related_view_set:
-                field = related_view_set.get_serializer()
 
         base_types = {
             serializers.BooleanField: BooleanValuedFieldTransformer,
@@ -143,6 +134,7 @@ class FieldTransformer:
             serializers.ListField: ListValuedFieldTransformer,
             serializers.ManyRelatedField: ListOfStringsValuedFieldTransformer,
             serializers.ModelSerializer: RelatedValuedFieldTransformer,
+            serializers.HyperlinkedRelatedField: HyperlinkedRelatedFieldTransformer,
             serializers.RelatedField: StringValuedFieldTransformer,
             serializers.TimeField: StringValuedFieldTransformer,
             serializers.UUIDField: StringValuedFieldTransformer,
@@ -215,6 +207,18 @@ class RelatedValuedFieldTransformer(FieldTransformer):
             if types_for_model:
                 type_name = '{}_{}'.format(type_name, len(types_for_model) + 1)
             return type_name
+
+
+class HyperlinkedRelatedFieldTransformer(RelatedValuedFieldTransformer):
+    def _build_graphene_type_name(self):
+        from graph_wrap.django_rest_framework.schema_factory import SchemaFactory
+        views = SchemaFactory.usable_views()
+        related_view_name = self._field.view_name.split('-')[0]
+        related_view_set = next(
+            (v for v in views if v.basename == related_view_name))
+        serializer = related_view_set.get_serializer()
+        model = serializer.Meta.model.__name__.lower()
+        return '{}_type'.format(model)
 
 
 class GenericValuedFieldTransformer(ScalarValuedFieldTransformer):

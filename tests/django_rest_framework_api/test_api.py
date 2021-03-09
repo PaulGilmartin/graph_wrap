@@ -123,6 +123,9 @@ class TestSchemaFactory(TestGraphWrapBase):
         self.assertFieldType(post_type, 'files', GraphQLNonNull)
         self.assertFieldTypeOfType(post_type, 'files', GraphQLList)
 
+        self.assertFieldType(post_type, 'author', GraphQLNonNull)
+        self.assertFieldTypeOfType(post_type, 'author', GrapheneObjectType)
+
 
 class TestGraphWrapApi(TestGraphWrapBase):
     def test_all_authors_query(self):
@@ -184,6 +187,12 @@ class TestGraphWrapApi(TestGraphWrapBase):
                 }
                 all_posts {
                     content
+                    author {
+                        name
+                        user {
+                            username
+                        }
+                    }
                 }
             }
             '''
@@ -204,7 +213,8 @@ class TestGraphWrapApi(TestGraphWrapBase):
         all_post_data = json.loads(
             response.content)['data']['all_posts']
         self.assertEqual(
-            [{'content': 'My first post!'}],
+            [{'content': 'My first post!',
+              'author': {'name': 'PAUL', 'user': {'username': 'Paul'}}}],
             all_post_data,
         )
 

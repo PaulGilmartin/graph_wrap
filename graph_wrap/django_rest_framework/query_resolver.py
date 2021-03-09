@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 from functools import partial
 
+from rest_framework import serializers
+
 from graph_wrap.shared.query_resolver import QueryResolverBase
 
 
@@ -21,11 +23,21 @@ class QueryResolver(QueryResolverBase):
                 self._set_selected_fields(self, selected_fields)
 
             def _set_selected_fields(self, serializer, selected_fields):
+                from graph_wrap.django_rest_framework.schema_factory import SchemaFactory
+
                 allowed = set(selected_fields)
                 existing = set(serializer.fields)
                 for field_name in existing - allowed:
                     serializer.fields.pop(field_name)
+
                 for field_name, field in serializer.fields.items():
+                    if isinstance(field, serializers.HyperlinkedRelatedField):
+                        views = SchemaFactory.usable_views()
+                        related_view_name = field.view_name.split('-')[0]
+                        related_view_set = next(
+                            (v for v in views if v.basename == related_view_name))
+                        field = related_view_set.get_serializer()
+                        serializer.fields[field_name] = field
                     if hasattr(field, 'child'):
                         field = field.child
                     if not hasattr(field, 'fields'):
