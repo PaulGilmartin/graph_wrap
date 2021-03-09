@@ -25,7 +25,7 @@ and the corresponding GraphQL type.
   https://itnext.io/what-is-the-n-1-problem-in-graphql-dd4921cb3c1a) which occurs with traditional REST-based APIs).
  
  
-## What problems does GraphWrap address?
+## Which problems does GraphWrap address?
 
 * A common pattern for circumventing the [n+1 problem](
   https://itnext.io/what-is-the-n-1-problem-in-graphql-dd4921cb3c1a) on a REST API is to expose
