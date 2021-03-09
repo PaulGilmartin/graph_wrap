@@ -13,9 +13,9 @@ GraphQL-queryable interface.
 ## Highlights:
 
 * The dynamic nature of the build of the GraphQL layer means that you can continue to develop your existing
-REST based API and know that the graphql schema will be kept up-to-date automatically. 
+REST based API and know that the GraphQL schema will be kept up-to-date automatically. 
 
-* Since the graphql layer is using the REST API under-the-hood, you can be sure that important things
+* Since the GraphQL layer is using the REST API under-the-hood, you can be sure that important things
 like **serialization**, **authentication**, **authorization** and **filtering** will be consistent between your REST view
 and the corresponding GraphQL type.
  
@@ -51,24 +51,25 @@ and the corresponding GraphQL type.
   https://itnext.io/what-is-the-n-1-problem-in-graphql-dd4921cb3c1a), it creates a whole new
   class of problem. The issue now is that we're potentially **over exposing** the nested author fields:
   we may have one api client who is interested in these nested fields, but we may also have several
-  for whom these fields are irrelevant and do not appreciate the extra time it now takes to fetch
-  and serialize this irrelevant data. Unless we start building an API *per client*  (which of course
+  for whom these fields are irrelevant and who do not appreciate the extra time it now takes to fetch
+  and serialize this additional data. Unless we start building an API *per client*  (which of course
   we do not want), we're a bit stuck.
   
 * Enter GraphQL: GraphQL is designed so that the client decides what info it receives from the server,
-  not the other way around. Whilst many great [packages](https://docs.graphene-python.org/projects/django/en/latest/))
-  exist to create a GraphQL API from scratch, doing so may not be manageable for a mature REST API nor
-  prudent just to solve this class of issue (imagine migrating authentication, filtration, permissions, etc.
-  all to a completely new API framework).
+  not the other way around. Whilst many great [packages](https://docs.graphene-python.org/projects/django/en/latest/)
+  exist to create a GraphQL API from scratch, migrating an mature production REST API
+  to use one of these frameworks is not so simple. It may also be that our REST API
+  has functionality which is not available on a GraphQL specific API.  
 * This is where GrapWrap comes in: by adding two lines of code to your project, GraphWrap
-  exposes a GraphQL schema which has the same "shape" as your existing REST API via a `/graphql`
-  endpoint. With this new endpoint, we can stop overexposing the `author` fields and instead
+  exposes a GraphQL schema which has the same "shape" as your existing REST API.
+  With this new endpoint, we can now stop overexposing the `author` fields and instead
   simply expose `author` as a URL:  
   ```
     class PostSerializer(serializers.ModelSerializer):
         author = serializers.HyperlinkedRelatedField(
             view_name='author-detail', read_only=True)
   ```
+  This keeps our clients who don't care about the nested author fields happy.
   Any client interested in retrieving the nested author fields can then do so via a query to the new `/graphql`
   endpoint:
   ```
@@ -89,7 +90,7 @@ and the corresponding GraphQL type.
 
 ## Limitations
 
-Here are a couple of limitations of the GraphQL API produced by GraphWrap:
+Here are a few limitations of the GraphQL API produced by GraphWrap:
 
 * It can only accept GraphQL [queries](https://graphql.org/learn/queries/) - mutations and subscriptions
   are not (yet) supported.
@@ -106,7 +107,8 @@ Here are a couple of limitations of the GraphQL API produced by GraphWrap:
 
 ## Quick start
 
-### Core Requirements
+### Prerequisites
+
 Before using this library, you must be using Python 3.6 (or later) and have the following installed:
 
 1. `Django >=2.2`
@@ -139,7 +141,7 @@ router.register(r'post', PostViewSet)
 
 urlpatterns = [
     path(r'', include(api.urls)),
-    path(r'/graphql/', view=graphql_view), # Addition 2: Register the view under the URL /graphl.
+    path(r'/graphql/', view=graphql_view), # Addition 2: Register the view under the URL /graphql.
 ]
 
 ```
@@ -147,18 +149,16 @@ urlpatterns = [
 
 ## Documentation (by Example)
 
-In this section we give a brief overview of how to use GraphWrap via examining
+In this section we give a brief overview of how to use GraphWrap with Django REST Framework via examining
 a simple concrete example. 
 
 
 ### Set-up
-Suppose we have the following basic django models and corresponding DRF serializers and viewsets (
-a fully executable version of this example can be found in graph_wrap.tests):
+Suppose we have the following basic django models and corresponding DRF API (
+a fully executable (but more complex) version of this example can be found in graph_wrap.tests):
 
 ```
-from django.contrib.auth.models import User
-from django.db import models
-
+# models.py
 
 class Media(models.Model):
     name = models.TextField()
@@ -189,52 +189,31 @@ class Post(models.Model):
 
 
 # api.py
-
-from django.contrib.auth.models import User
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import serializers, viewsets, filters
-
-from tests.models import Author, Post
-
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        exclude = ('password',)
+        fields = ['username', 'is_staff']
 
 
 class AuthorSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     entries = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Post.objects.all())
-    amount_of_entries = serializers.SerializerMethodField()
-    name = serializers.CharField(source='get_name')
 
     class Meta:
         model = Author
-        fields = ['name', 'age', 'active', 'profile_picture',
-         'user', 'entries', 'amount_of_entries']
-
-    def get_amount_of_entries(self, obj):
-        return obj.entries.count()
-
-
-class WrittenBySerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='get_name')
-
-    class Meta:
-        model = Author
-        fields = ['name']
+        fields = ['name', 'age', 'rating', 'profile_picture', 'user', 'entries']
 
 
 class PostSerializer(serializers.ModelSerializer):
-    written_by = WrittenBySerializer(source='author')
+    written_by = serializers.HyperlinkedRelatedField(
+        view_name='author-detail', read_only=True)
 
     class Meta:
         model = Post
         depth = 3
-        fields = ['content', 'written_by', 'date', 'rating', 'files']
-       
+        fields = ['written_by', 'content', 'date', 'files']
+
 
 class AuthorViewSet(viewsets.ModelViewSet):
     queryset = Author.objects.all()
@@ -252,53 +231,68 @@ class PostViewSet(viewsets.ReadOnlyModelViewSet):
 
 If we wish to layer our REST resources with a GraphQL interface, we can follow the instructions above in the
 "Quickstart" guide where we import the `graphql_view` and expose it via the `/graphql` url:
+```
+from graph_wrap.django_rest_framework.graphql_view import graphql_view  # Addition 1: import the graphql_view
+from tests.django_rest_framework_api.api import (
+    AuthorViewSet, PostViewSet)
+
+
+router = routers.SimpleRouter()
+router.register(r'author', AuthorViewSet)
+router.register(r'post', PostViewSet)
+
+
+urlpatterns = [
+    path(r'', include(api.urls)),
+    path(r'/graphql/', view=graphql_view), # Addition 2: Register the view under the URL /graphql.
+]
+
+```
 
 
 ### Understanding the Schema
 With these simple changes, we can now query the  `/graphql` endpoint with GraphQL queries. The structure
-queries can take, as with all GraphQL APIs, is dictated by the shape of the underlying schema (which, in this case, is
-dictated by the shape of the tastypie API). To see what the schema looks like, run the following:
+queries can take, as with all GraphQL APIs, is dictated by the shape of the underlying [schema](https://graphql.org/learn/schema/)
+(which, in this case, is dictated by the shape of the Django REST Framework API). To see what the schema looks like, run the following:
 
 ```
 >>> from graph_wrap.django_rest_framework import schema
->>> schema = schema()
->>> print(schema)
-
+>>> print(schema())
 
 schema {
   query: Query
 }
 type Query {
   author(id: Int!): author_type
-  all_authors(orm_filters: String): [author_type]
+  all_authors: [author_type]
   post(id: Int!): post_type
-  all_posts(orm_filters: String): [post_type]
-  media(id: Int!): media_type
-  all_medias(orm_filters: String): [media_type]
+  all_posts(search: String, orm_filters: String): [post_type]
 }
 type author_type {
-  resource_uri: String!
-  posts: [post_type]!
-  id: Int!
   name: String!
-  age: String!
-}
-type media_type {
-  resource_uri: String!
-  id: Int!
-  name: String!
-  content_type: String!
-  size: Int!
+  age: Int
+  active: Boolean!
+  profile_picture: String
+  user: user_type!
+  entries: [String]!
 }
 type post_type {
-  resource_uri: String!
-  author: author_type
-  files: [media_type]!
-  date: String!
-  id: Int!
+  written_by: author_type!
   content: String!
+  date: String!
+  files: [post__files_type]!
+  rating: String
 }
-
+type post__files_type {
+  id: Int!
+  name: String!
+  content_type: String
+  size: Int
+}
+type user_type {
+  username: String!
+  is_staff: Boolean!
+}
 ```
 
 Important points to note about the schema produced by GraphWrap:
@@ -308,49 +302,63 @@ Important points to note about the schema produced by GraphWrap:
   the field names on the underlying REST resources (which would use most often use the PEP8 recommended snake 
   case convention).
   
-* **Root Query field names**: For each REST model-resource, GraphWrap adds to the Query type precisely
+* **Root Query fields**: For each DRF ModelViewSet in our API, GraphWrap adds to the Query type precisely
   two fields - one corresponding to the data accessible via a GET request to the 'list' endpoint of the
   resource, and one corresponding to the data accessible via a GET request to the 'detail' endpoint of the
-  resource. If we take our AuthorResource as an example:
+  resource. If we take our AuthorViewSet as an example:
     * the 'list' endpoint corresponds to the url `/author`. This maps to the `all_authors` field on the Query type.
     * the 'detail' endpoint corresponds to urls of the form '/author/{author_pk}'. This maps to the `author(id: Int!)`
       field on the Query type (where, in the usual GraphQL schema syntax, `(id: Int!)` indicates that an integer author
       id must be supplied.)
-      
+            
 * **ObjectType and ObjectType Field names**: 
-    * GraphWrap maps each model-resource maps to a GraphQL
-      ObjectType. The name of the resultant ObjectType can be found by appending `_type` to the name of the
-      corresponding resource. For example, the `AuthorResource`, which has name `author`, maps to the `author_type`
-      GraphQL ObjectType. 
-    * The names of the fields on each ObjectType match those of the names of the fields on the corresponding
-      resource.
+    * GraphWrap maps each model *serializer* in our DRF API to a GraphQL
+      ObjectType (including dynamically build [nested serializers](
+      https://www.django-rest-framework.org/api-guide/serializers/#specifying-nested-serialization). 
+    * The naming convention of the resultant ObjectType depends from which serializer it was created:
+      * If the ObjectType corresponds to an explicit "non-nested" serializer, the name of the field can be 
+        found by appending `_type` to the lowercase version name of the underlying serializer model. For example,
+        the `AuthorSerializer` corresponds to the `author_type` in the above.
+      * If the ObjectType comes from a dynamically created `NestedSerializer`, the name of the field follows the Django
+        query notation: `{parent_model}__{related_field}_type`. For example, in our API above the `PostSerializer`
+        is set to have `depth=3`. This creates a `NestedSerializer` for the `files` field, which corresponds to the
+        `post__files_type` in the above.
+
       
-* **Filtering (`orm_filters`)**: Notice in the schema above that each `all_` field can be queried with an optional 
-    `orm_filters` argument. This is the GraphQL equivalent of the ORM filtering offered by tastypie on list endpoints.
-    If we take our AuthorResource as an example (which has been defined with 
-    `filtering = {'age': ('exact',), 'name': ('exact',)})`, then the REST GET query `/author/?name=Paul` can be achieved
-    via a POST request to `/graphql` with the following query:
+* **Filtering (`orm_filters` and `search`)**: 
+    * Currently, the `/graphql` endpoint produced by GraphWrap supports two types of filtering used by the Django REST
+    Framework: [Generic Filtering](https://www.django-rest-framework.org/api-guide/filtering/#generic-filtering) via the
+    django_filters `DjangoFilterBackend` and
+    [SearchFilter](https://www.django-rest-framework.org/api-guide/filtering/#searchfilter).
+    * When a DRF ViewSet allows filtering via the `DjangoFilterBackend`, the corresponding `Query` field on the
+      GraphQL schema produced by GraphWrap will have an optional `orm_filters` argument. If we take our `PostViewSet`
+      as an example, then the filtering done by the REST GET query `/paul/?author__name=Paul` can be achieved
+      via a POST request to `/graphql` with the following query:
     
     ```
     {
-      all_authors(orm_filters: "name=Paul") {
-        name
+      all_posts(orm_filters: "author__name=Paul") {
+        content  # or any fields belonging to post_type
       }
     }
     ```
+    * Similarly, when a DRF ViewSet allows filtering via the `SearchFilter`, the corresponding `Query` field on the
+      GraphQL schema produced by GraphWrap will have an optional `search` argument. This can be used in a similar
+      fashion.
+
    
    
-### Authentication and Authorization of GraphQLResource
+### Authentication and Authorization of /graphql endpoint
 
 The authentication/authorization applied 
 when querying `/graphql` is the authentication/authorization defined on the resource corresponding to the root field 
-of the query applied. This is consistent with the way tastypie handles authenticaiton/authorization.
+of the query applied. This is consistent with the way DRF handles authenticaiton/authorization.
 So, for example, the following query would invoke whatever authentication/authorization
-was defined on the `AuthorResource`:
+was defined on the `AuthorViewSet`:
 
 ``` 
     {
-      all_authors(orm_filters: "name=Paul") {
+      all_authors {
         name
       }
     }
@@ -364,7 +372,8 @@ was defined on the `AuthorResource`:
 In this section we'll look at how various REST GET requests can be mapped to queries for the ``/graphql``
 endpoint. Again, we'll do this via examining our explicit concrete example (note that the queries
 and requests pictured in this section were produced on the [Insomnia](https://insomnia.rest/)
-HTTP client, which has a integration with GraphQL):
+HTTP client, which has a integration with GraphQL). Some of the fields here might not match up exactly
+with our example above, but hopefully the idea is clear:
 
 
 
@@ -419,15 +428,16 @@ HTTP client, which has a integration with GraphQL):
 
 
 
+# GraphWrap for Tastypie
+
 
 ## Quick start
-
 
 ### Core Requirements
 Before using this library, the following requirements must be met:
 
 1. Your project is using `Python >= 3.6` and ` Django >=2.2`.
-2. Either one of the following packages already installed: `djangorestframework>=3.0.0` or `django-tastypie>=0.14.0`.
+2. You have `django-tastypie>=0.14.0` installed.
 
 
 ### Installing
