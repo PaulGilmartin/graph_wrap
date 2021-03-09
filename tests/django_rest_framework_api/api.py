@@ -46,13 +46,17 @@ class WrittenBySerializer(serializers.ModelSerializer):
 
 class PostSerializer(serializers.ModelSerializer):
     written_by = WrittenBySerializer(source='author')
+    author = serializers.HyperlinkedRelatedField(
+        view_name='author-detail',read_only=True)
 
     class Meta:
         model = Post
         depth = 3
         fields = [
-            'content',
             'written_by',
+            'author',
+            'content',
+            'author',
             'date',
             'rating',
             'files',

@@ -117,10 +117,20 @@ class FieldTransformer:
 
     @classmethod
     def get_transformer(cls, field, type_mapping):
+        from graph_wrap.django_rest_framework.schema_factory import SchemaFactory
+
         if hasattr(field, 'child') and isinstance(
                 field.child, serializers.ModelSerializer):
             # for ListSerializers from M2M fields
             return RelatedValuedFieldTransformer(field, type_mapping)
+        if isinstance(field, serializers.HyperlinkedRelatedField):
+            views = SchemaFactory.usable_views()
+            related_view_name = field.view_name.split('-')[0]
+            related_view_set = next(
+                (v for v in views if v.basename == related_view_name), None)
+            if related_view_set:
+                field = related_view_set.get_serializer()
+
         base_types = {
             serializers.BooleanField: BooleanValuedFieldTransformer,
             serializers.CharField: StringValuedFieldTransformer,

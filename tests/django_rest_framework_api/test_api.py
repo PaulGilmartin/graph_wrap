@@ -110,7 +110,7 @@ class TestSchemaFactory(TestGraphWrapBase):
     def test_post_type(self):
         post_type = self.type_map['post_type']
         self.assertEqual(
-            {'content', 'date', 'written_by', 'rating', 'files'},
+            {'content', 'date', 'written_by', 'rating', 'files', 'author'},
             set(post_type.fields),
         )
         self.assertFieldType(post_type, 'content', GraphQLNonNull)
@@ -412,7 +412,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
 
     def test_get_rest_api_detail(self):
         response = self.client.get(
-            '/django_rest/author/{}/'.format(self.paul.pk),
+            '/django_rest/writer/{}/'.format(self.paul.pk),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)

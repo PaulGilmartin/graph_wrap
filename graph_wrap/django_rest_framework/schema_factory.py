@@ -21,6 +21,11 @@ class SchemaFactory:
 
     @classmethod
     def create_from_api(cls):
+        views = cls.usable_views()
+        return cls(views).create()
+
+    @classmethod
+    def usable_views(cls):
         api_endpoints = EndpointEnumerator().get_api_endpoints()
         generator = BaseSchemaGenerator()
         views = []
@@ -30,7 +35,7 @@ class SchemaFactory:
             if cls._usable_viewset(view):
                 if view.__class__ not in [v.__class__ for v in views]:
                     views.append(view)
-        return cls(views).create()
+        return views
 
     @staticmethod
     def _usable_viewset(viewset):
