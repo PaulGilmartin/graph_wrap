@@ -19,12 +19,73 @@ REST based API and know that the graphql schema will be kept up-to-date automati
 like **serialization**, **authentication**, **authorization** and **filtering** will be consistent between your REST view
 and the corresponding GraphQL type.
  
-* No longer need to worry about overexposing nested views - the client can simply
-  make use of the GraphQL layer to retrieve data they want from nested views. This can lead to significant performance boosts
+* You no longer need to "over expose" fields from nested apis - the client can make use of the GraphQL layer 
+  to fetch data they need. This can lead to significant performance boosts
   in certain circumstances (One of the advantages of GraphQL queries is that they solve the [n+1 problem](
   https://itnext.io/what-is-the-n-1-problem-in-graphql-dd4921cb3c1a) which occurs with traditional REST-based APIs).
  
+ 
+## What problems does GraphWrap address?
 
+* A common pattern for circumventing the [n+1 problem](
+  https://itnext.io/what-is-the-n-1-problem-in-graphql-dd4921cb3c1a) on a REST API is to expose
+  fields from "nested" serializers on a parent serializer. For example, here we expose
+  fields from the `AuthorSerializer` on the `PostViewSet`:
+  ```
+    class AuthorSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = Author
+            fields = ['name', 'active']
+    
+    class PostSerializer(serializers.ModelSerializer):
+        author = AuthorSerializer(source='author')
+        class Meta:
+            model = Post
+            fields = ['author', 'content']
+    
+    class PostViewSet(viewsets.ReadOnlyModelViewSet):
+        queryset = Post.objects.all()
+        serializer_class = PostSerializer
+  ```
+* Whilst this solves [n+1 problem](
+  https://itnext.io/what-is-the-n-1-problem-in-graphql-dd4921cb3c1a), it creates a whole new
+  class of problem. The issue now is that we're potentially **over exposing** the nested author fields:
+  we may have one api client who is interested in these nested fields, but we may also have several
+  for whom these fields are irrelevant and do not appreciate the extra time it now takes to fetch
+  and serialize this irrelevant data. Unless we start building an API *per client*  (which of course
+  we do not want), we're a bit stuck.
+  
+* Enter GraphQL: GraphQL is designed so that the client decides what info it receives from the server,
+  not the other way around. Whilst many great [packages](https://docs.graphene-python.org/projects/django/en/latest/))
+  exist to create a GraphQL API from scratch, doing so may not be manageable for a mature REST API nor
+  prudent just to solve this class of issue (imagine migrating authentication, filtration, permissions, etc.
+  all to a completely new API framework).
+* This is where GrapWrap comes in: by adding two lines of code to your project, GraphWrap
+  exposes a GraphQL schema which has the same "shape" as your existing REST API via a `/graphql`
+  endpoint. With this new endpoint, we can stop overexposing the `author` fields and instead
+  simply expose `author` as a URL:  
+  ```
+    class PostSerializer(serializers.ModelSerializer):
+        author = serializers.HyperlinkedRelatedField(
+            view_name='author-detail', read_only=True)
+  ```
+  Any client interested in retrieving the nested author fields can then do so via a query to the new `/graphql`
+  endpoint:
+  ```
+    query {
+        all_posts {
+            content
+            author {
+                name
+                active
+            }
+        }
+    }
+  ```
+  The important point here is that the above query will authentication, permissions and
+  serialization coming from the corresponding Django REST Post and Author viewsets/serializers.
+  
+  
 
 ## Limitations
 
@@ -37,11 +98,9 @@ Here are a couple of limitations of the GraphQL API produced by GraphWrap:
  (or `ReadOnlyModelViewSet`) and which are registered via a router which inherits from [SimpleRouter](
  https://www.django-rest-framework.org/api-guide/routers/#simplerouter). Alternatively, if you're
  using tastypie, the schema is only built from resources inheriting from `ModelResource`.
+ 
+* Will only work for APIs which use JSON serialization.
   
-* Any custom serializer fields which don't inherit from one of the [standard DRF serializer fields](
-https://www.django-rest-framework.org/api-guide/fields/) will be mapped to a graphene GenericScalar.
-
-* Works only for JSON serialization.
 
 # GraphWrap for the Django REST Framework
 

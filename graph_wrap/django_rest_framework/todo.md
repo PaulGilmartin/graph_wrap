@@ -19,5 +19,5 @@
 
 * (DONE)Test Hyperlinked
 * (DONE) django_filter
-* test on intempus api
-* When a HyperLinkRelated field is used, we need to be able to give the nested rep. 
+* (Requires Django 2.2) test on intempus api
+* (DONE) When a HyperLinkRelated field is used, we need to be able to give the nested rep. 
