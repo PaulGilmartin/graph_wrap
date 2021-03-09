@@ -18,10 +18,10 @@ from graphene import (
 )
 from graphene.types.generic import GenericScalar
 
-from .field_resolvers import JSONResolver
+from graph_wrap.shared.query_resolver import JSONResolver
 
 
-def transform_resource(tastypie_resource):
+def transform_api(tastypie_resource):
     """Transform a tastypie resource into a graphene ObjectType."""
     class_attrs = dict()
     graphene_type_name = tastypie_resource._meta.resource_name + '_type'
@@ -149,7 +149,7 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         from .schema_factory import SchemaFactory
         # Needs to be lazy since at this point the related
         # type may not yet have been created
-        return lambda: SchemaFactory.resource_class_to_schema[
+        return lambda: SchemaFactory.api_class_to_schema[
             self._resource_class]
 
 

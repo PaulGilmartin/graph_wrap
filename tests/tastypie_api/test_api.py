@@ -13,7 +13,7 @@ from tests.models import Author, Post, Media
 class TestApi(ResourceTestCaseMixin, TransactionTestCase):
     def setUp(self):
         super(TestApi, self).setUp()
-        self.graphql_endpoint = '/v1/graphql/'
+        self.graphql_endpoint = '/tastypie/v1/graphql/'
         self.picture = Media.objects.create(
             name='elephant',
             content_type='jpg',
@@ -60,6 +60,38 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
             all_authors_data,
         )
 
+    def test_all_authors_all_posts_query(self):
+        query = '''
+            query {
+                all_authors {
+                    name
+                }
+                all_posts {
+                    content
+                }
+            }
+            '''
+        body = {"query": query}
+        request_json = json.dumps(body)
+        response = self.client.post(
+            self.graphql_endpoint,
+            request_json,
+            content_type="application/json",
+        )
+        self.assertHttpOK(response)
+        all_authors_data = json.loads(
+            response.content)['data']['all_authors']
+        self.assertEqual(
+            [{'name': 'Paul'}, {'name': 'Scott'}],
+            all_authors_data,
+        )
+        all_post_data = json.loads(
+            response.content)['data']['all_posts']
+        self.assertEqual(
+            [{'content': 'My first post!'}],
+            all_post_data,
+        )
+
     def test_all_authors_query_with_orm_filters_argument(self):
         query = '''
             query {
@@ -102,7 +134,7 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
         self.assertHttpOK(response)
         author_data = json.loads(response.content)['data']['author']
         self.assertEqual(
-            {'name': 'Scott', 'age': '28'},
+            {'name': 'Scott', 'age': 28},
             author_data,
         )
 
@@ -210,9 +242,12 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
         self.assertEqual('My first post!', post_data['content'])
         self.assertEqual({'name': 'Paul'}, post_data['author'])
 
+    def test_query_with_directive(self):
+        pass
+
     def test_rest_endpoint_query(self):
         response = self.client.get(
-            '/v1/author/{}/'.format(self.paul.pk),
+            '/tastypie/v1/author/{}/'.format(self.paul.pk),
             {},
             content_type="application/json",
         )
@@ -220,4 +255,4 @@ class TestApi(ResourceTestCaseMixin, TransactionTestCase):
         posts = json.loads(response.content)['posts']
         self.assertEqual(1, len(posts))
         self.assertEqual(
-            '/v1/post/{}/'.format(self.pauls_first_post.pk), posts[0])
+            '/tastypie/v1/post/{}/'.format(self.pauls_first_post.pk), posts[0])

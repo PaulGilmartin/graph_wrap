@@ -41,6 +41,22 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+try:
+    import rest_framework
+except ImportError:
+    pass
+else:
+    INSTALLED_APPS.append('rest_framework')
+
+
+try:
+    import django_filters
+except ImportError:
+    pass
+else:
+    INSTALLED_APPS.append('django_filters')
+
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -120,4 +136,3 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 TASTYPIE_API_PATH = 'urls.api'
-

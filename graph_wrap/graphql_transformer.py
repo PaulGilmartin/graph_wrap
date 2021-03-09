@@ -18,8 +18,7 @@ class GraphQLResolveInfoTransformer(object):
         self._root_field_name = root_field_name
         self._resolve_info = resolve_info
         self._request = self._resolve_info.context
-        self._query_string = '{}'.format(
-            field_kwargs.get('orm_filters', ''))
+        self._field_kwargs = field_kwargs
 
     def transform_graphql_request(self, **environ_params):
         """Transforms input request to a GET request.
@@ -28,16 +27,28 @@ class GraphQLResolveInfoTransformer(object):
          a POST request originally pointed at graphql endpoint),
          to the appropriate  GET request for a REST endpoint.
          """
-        # TODO: Get correct path info for request - see Api.top_level
+        # TODO: Get correct path info for request
         environ = self._request.environ
         environ_overrides = dict(
             REQUEST_METHOD='GET',
-            QUERY_STRING=self._query_string,
             **environ_params
         )
+        if 'orm_filters' in self._field_kwargs:
+            query_string = self._field_kwargs['orm_filters']
+            environ_overrides['QUERY_STRING'] = query_string
         environ.update(environ_overrides)
         get_request = WSGIRequest(environ)
         get_request.user = self._request.user
+        get_request.content_type = self._request.content_type
+        try:
+            from rest_framework.settings import api_settings
+        except ImportError:
+            pass
+        else:
+            if api_settings.SEARCH_PARAM in self._field_kwargs:
+                query = self._request.GET.copy()
+                query.update(self._field_kwargs)
+                get_request.GET = query
         return get_request
 
     def transform_resolve_info(self):
