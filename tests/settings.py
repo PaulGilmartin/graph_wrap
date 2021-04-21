@@ -136,3 +136,5 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 TASTYPIE_API_PATH = 'urls.api'
+
+AUTH_USER_MODEL = "tests.User"
