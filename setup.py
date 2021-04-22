@@ -24,7 +24,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="graph-wrap",
-    version="0.1.0",
+    version="0.1.1",
     description="Extend an existing Django REST Framework or Tastypie API with a GraphQL"
                 " interface with a only a couple of lines of code.",
     long_description=long_description,
@@ -43,7 +43,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
     ],
-    keywords="tastypie graphene django graphql rest api",
+    keywords="tastypie graphene django graphql rest api djangorestframework drf",
     packages=find_packages(),
     python_requires=">=3.6,  <4",
     # For an analysis of "install_requires" vs pip's requirements files see:
