@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 from django.contrib.auth.models import User
-#from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import serializers, viewsets, filters
 
 from tests.models import Author, Post
