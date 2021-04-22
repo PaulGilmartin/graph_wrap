@@ -126,7 +126,7 @@ pip install graph_wrap
 
 GraphWrap exposes the GraphQL schema via a Django view `graphql_view`. This view builds and exposes a GraphQL
 queryable schema via a POST request to a `/graphql` endpoint. The code snippet below demonstrates by example
-how you can transform your DRF RES-API into a GraphQL schema by adding just two lines of code to your project:
+how you can transform your DRF REST-API into a GraphQL schema by adding just two lines of code to your project:
 
 ```python
 from rest_framework import routers
@@ -438,8 +438,7 @@ with our example above, but hopefully the idea is clear:
 ### Core Requirements
 Before using this library, the following requirements must be met:
 
-1. Your project is using `Python >= 3.6` and ` Django >=2.2`.
-2. You have `django-tastypie>=0.14.0` installed.
+* Your project is using `Python >= 3.6` and ` Django >=2.2`.
 
 
 ### Installing
@@ -449,32 +448,26 @@ pip install graph_wrap
 ```
 
 
-### Registering the GraphQL resource
+### Registering the GraphQL endpoint
 
-GraphWrap exposes the GraphQL schema via a tastypie resource `GraphQLResource` (which is effectively a Django class-based view).
-As with all resources, we are required to register `GraphQLResource` with the tastypie Api instance
-before we can interact with it via HTTP requests. Once registered, `GraphQLResource` builds and exposes a GraphQL
-queryable schema via the `/graphql` endpoint.
+GraphWrap exposes the GraphQL schema via a Django view `graphql_view`. This view builds and exposes a GraphQL
+queryable schema via a POST request to a `/graphql` endpoint. The code snippet below demonstrates by example
+how you can transform your Tastypie into a GraphQL schema by adding just three lines of code to your project:
+
 
 ```python
 # tests.urls.py
-from graph_wrap import GraphQLResource  # add this line to your project
 
-api = Api('v1')
-api.register(GraphQLResource()) # add this line to your project
+
+from graph_wrap.tastypie.graphql_view import graphql_view # add this line to your project
+
 
 urlpatterns = [
-    path(r'', include(api.urls)),
-    ...
+    ...,
+    path(r'/graphql/', view=graphql_view), # Register the view under the URL /graphql.
 ]
 
 ```
-
-### Querying the GraphQL resource
-
-As mentioned above, GraphWrap exposes the GraphQL API via the `/graphql` URL. 
-
-### Settings
 
 In order for GraphQL to be able to build the GraphQL schema from the tastypie Api instance, it needs
 to know where that instance lives in your project. To allow GraphWrap to locate the Api instance, we can simply
@@ -485,6 +478,7 @@ add the full path of the instance to our django settings module. For example:
 
 TASTYPIE_API_PATH = 'tests.urls.api'
 ```
+
 
 
 ## Documentation (by Example)
@@ -581,7 +575,7 @@ TASTYPIE_API_PATH = 'tests.urls.api'
 ```
 
 ### Understanding the Schema
-With these simple changes, we can now query the  `/grahql` endpoint with GraphQL queries. The structure
+With these simple changes, we can now query the  `/graphql` endpoint with GraphQL queries. The structure
 queries can take, as with all GraphQL APIs, is dictated by the shape of the underlying schema (which, in this case, is
 dictated by the shape of the tastypie API). To see what the schema looks like, run the following:
 
