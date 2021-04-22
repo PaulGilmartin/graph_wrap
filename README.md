@@ -31,7 +31,7 @@ and the corresponding GraphQL type.
   https://itnext.io/what-is-the-n-1-problem-in-graphql-dd4921cb3c1a) on a REST API is to expose
   fields from "nested" serializers on a parent serializer. For example, here we expose
   fields from the `AuthorSerializer` on the `PostViewSet`:
-  ```
+  ```python
     class AuthorSerializer(serializers.ModelSerializer):
         class Meta:
             model = Author
@@ -64,7 +64,7 @@ and the corresponding GraphQL type.
   exposes a GraphQL schema which has the same "shape" as your existing REST API.
   With this new endpoint, we can now stop overexposing the `author` fields and instead
   simply expose `author` as a URL:  
-  ```
+  ```python
     class PostSerializer(serializers.ModelSerializer):
         author = serializers.HyperlinkedRelatedField(
             view_name='author-detail', read_only=True)
@@ -72,7 +72,7 @@ and the corresponding GraphQL type.
   This keeps our clients who don't care about the nested author fields happy.
   Any client interested in retrieving the nested author fields can then do so via a query to the new `/graphql`
   endpoint:
-  ```
+  ```graphql
     query {
         all_posts {
             content
@@ -117,7 +117,9 @@ Before using this library, you must be using Python 3.6 (or later) and have the 
 
 ### Installing
 
-`pip install graph_wrap`
+```bash
+pip install graph_wrap
+```
 
 
 ### Exposing the /graphql endpoint
@@ -126,7 +128,7 @@ GraphWrap exposes the GraphQL schema via a Django view `graphql_view`. This view
 queryable schema via a POST request to a `/graphql` endpoint. The code snippet below demonstrates by example
 how you can transform your DRF REST-API into a GraphQL schema by adding just two lines of code to your project:
 
-```
+```python
 from rest_framework import routers
 
 from graph_wrap.django_rest_framework.graphql_view import graphql_view  # Addition 1: import the graphql_view
@@ -157,7 +159,7 @@ a simple concrete example.
 Suppose we have the following basic django models and corresponding DRF API (
 a fully executable (but more complex) version of this example can be found in graph_wrap.tests):
 
-```
+```python
 # models.py
 
 class Media(models.Model):
@@ -231,7 +233,7 @@ class PostViewSet(viewsets.ReadOnlyModelViewSet):
 
 If we wish to layer our REST resources with a GraphQL interface, we can follow the instructions above in the
 "Quickstart" guide where we import the `graphql_view` and expose it via the `/graphql` url:
-```
+```python
 from graph_wrap.django_rest_framework.graphql_view import graphql_view  # Addition 1: import the graphql_view
 from tests.django_rest_framework_api.api import (
     AuthorViewSet, PostViewSet)
@@ -255,7 +257,7 @@ With these simple changes, we can now query the  `/graphql` endpoint with GraphQ
 queries can take, as with all GraphQL APIs, is dictated by the shape of the underlying [schema](https://graphql.org/learn/schema/)
 (which, in this case, is dictated by the shape of the Django REST Framework API). To see what the schema looks like, run the following:
 
-```
+```bash
 >>> from graph_wrap.django_rest_framework import schema
 >>> print(schema())
 
@@ -335,7 +337,7 @@ Important points to note about the schema produced by GraphWrap:
       as an example, then the filtering done by the REST GET query `/paul/?author__name=Paul` can be achieved
       via a POST request to `/graphql` with the following query:
     
-    ```
+    ```graphql
     {
       all_posts(orm_filters: "author__name=Paul") {
         content  # or any fields belonging to post_type
@@ -356,7 +358,7 @@ of the query applied. This is consistent with the way DRF handles authenticaiton
 So, for example, the following query would invoke whatever authentication/authorization
 was defined on the `AuthorViewSet`:
 
-``` 
+``` graphql
     {
       all_authors {
         name
@@ -441,7 +443,9 @@ Before using this library, the following requirements must be met:
 
 ### Installing
 
-`pip install graph_wrap`
+```bash
+pip install graph_wrap
+```
 
 
 ### Registering the GraphQL endpoint
@@ -450,7 +454,10 @@ GraphWrap exposes the GraphQL schema via a Django view `graphql_view`. This view
 queryable schema via a POST request to a `/graphql` endpoint. The code snippet below demonstrates by example
 how you can transform your Tastypie into a GraphQL schema by adding just three lines of code to your project:
 
-```
+
+```python
+# tests.urls.py
+
 
 from graph_wrap.tastypie.graphql_view import graphql_view # add this line to your project
 
@@ -466,7 +473,7 @@ In order for GraphQL to be able to build the GraphQL schema from the tastypie Ap
 to know where that instance lives in your project. To allow GraphWrap to locate the Api instance, we can simply
 add the full path of the instance to our django settings module. For example:
 
-```
+```python
 # tests.settings.py
 
 TASTYPIE_API_PATH = 'tests.urls.api'
@@ -484,7 +491,7 @@ a simple concrete example.
 Suppose we have the following basic django models and corresponding tastypie resources (
 a fully executable version of this example can be found in graph_wrap.tests):
 
-```
+```python
 # models.py
 
 class Author(models.Model):
@@ -538,7 +545,7 @@ class MediaResource(ModelResource):
 If we wish to layer our REST resources with a GraphQL interface, we can follow the instructions above in the
 "Quickstart" guide. Start by registering our GraphQLResource with the tastypie Api instance:
 
-```
+```python
 # urls.py
 
 from django.contrib import admin
@@ -563,7 +570,7 @@ urlpatterns = [
 
 Next, add the `TASTYPIE_API_PATH` to the django settings module so GraphWrap can locate the tastypie Api:
 
-```
+```python
 TASTYPIE_API_PATH = 'tests.urls.api'
 ```
 
@@ -572,7 +579,7 @@ With these simple changes, we can now query the  `/graphql` endpoint with GraphQ
 queries can take, as with all GraphQL APIs, is dictated by the shape of the underlying schema (which, in this case, is
 dictated by the shape of the tastypie API). To see what the schema looks like, run the following:
 
-```
+```bash
 >>> from graph_wrap import schema
 >>> schema = schema()
 >>> print(schema)
@@ -644,7 +651,7 @@ Important points to note about the schema produced by GraphWrap:
     `filtering = {'age': ('exact',), 'name': ('exact',)})`, then the REST GET query `/author/?name=Paul` can be achieved
     via a POST request to `/graphql` with the following query:
     
-    ```
+    ```graphql
     {
       all_authors(orm_filters: "name=Paul") {
         name
@@ -661,7 +668,7 @@ of the query applied. This is consistent with the way tastypie handles authentic
 So, for example, the following query would invoke whatever authentication/authorization
 was defined on the `AuthorResource`:
 
-``` 
+```graphql
     {
       all_authors(orm_filters: "name=Paul") {
         name
