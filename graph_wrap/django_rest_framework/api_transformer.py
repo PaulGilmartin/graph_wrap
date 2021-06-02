@@ -86,7 +86,7 @@ class SerializerTransformer(object):
         else:
             named_field = self._serializer
         serializer_cls_name = self._serializer.__class__.__name__
-        if serializer_cls_name == 'NestedSerializer':
+        if 'Nested' in serializer_cls_name:
             model = named_field.parent.Meta.model.__name__.lower()
             return '{}__{}_type'.format(model, named_field.field_name)
         else:
@@ -196,7 +196,7 @@ class RelatedValuedFieldTransformer(FieldTransformer):
             serializer_cls_name = self._field.child.__class__.__name__
         else:
             serializer_cls_name = self._field.__class__.__name__
-        if serializer_cls_name == 'NestedSerializer':
+        if 'Nested' in serializer_cls_name:
             model = self._field.parent.Meta.model.__name__.lower()
             return '{}__{}_type'.format(model, self._field.field_name)
         else:
