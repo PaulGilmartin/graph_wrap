@@ -213,7 +213,8 @@ class HyperlinkedRelatedFieldTransformer(RelatedValuedFieldTransformer):
     def _build_graphene_type_name(self):
         from graph_wrap.django_rest_framework.schema_factory import SchemaFactory
         views = SchemaFactory.usable_views()
-        related_view_name = self._field.view_name.split('-')[0]
+        related_view_name = self._field.view_name.split(':')[-1]  # Strip namespace (if present)
+        related_view_name = related_view_name.split('-')[0]
         related_view_set = next(
             (v for v in views if v.basename == related_view_name))
         serializer = related_view_set.get_serializer()
