@@ -33,7 +33,7 @@ class ApiTransformer:
         non_root_types = []
         for nested in self._nested_serializers:
             nested_transformed = SerializerTransformer(
-                nested, self.type_mapping).graphene_object_type()
+                nested, self.type_mapping, nested=True).graphene_object_type()
             non_root_types.append(nested_transformed)
         return non_root_types
 
@@ -59,8 +59,10 @@ class SerializerTransformer(object):
             serializer,
             type_mapping=None,
             graphene_type_name='',
+            nested=False,
     ):
         self._serializer = serializer
+        self._nested = nested
         self.type_mapping = type_mapping if type_mapping is not None else dict()
         self._graphene_type_name = (
                 graphene_type_name or self._build_graphene_type_name())
@@ -71,6 +73,7 @@ class SerializerTransformer(object):
             return self.type_mapping[self._graphene_type_name]
         except KeyError:
             for field in self._serializer.fields.values():
+                field._is_nested = self._nested  # Annotate nesting from context
                 self._add_field_data(field)
             graphene_type = type(
                 self._graphene_type_name,
@@ -85,8 +88,7 @@ class SerializerTransformer(object):
             named_field = self._serializer.parent
         else:
             named_field = self._serializer
-        serializer_cls_name = self._serializer.__class__.__name__
-        if serializer_cls_name == 'NestedSerializer':
+        if self._nested:
             model = named_field.parent.Meta.model.__name__.lower()
             return '{}__{}_type'.format(model, named_field.field_name)
         else:
@@ -193,14 +195,13 @@ class RelatedValuedFieldTransformer(FieldTransformer):
 
     def _build_graphene_type_name(self):
         if isinstance(self._field, ListSerializer):
-            serializer_cls_name = self._field.child.__class__.__name__
+            serializer = self._field.child
         else:
-            serializer_cls_name = self._field.__class__.__name__
-        if serializer_cls_name == 'NestedSerializer':
-            model = self._field.parent.Meta.model.__name__.lower()
+            serializer = self._field
+        model = serializer.Meta.model.__name__.lower()
+        if self._field._is_nested:
             return '{}__{}_type'.format(model, self._field.field_name)
         else:
-            model = self._field.Meta.model.__name__.lower()
             type_name = '{}_type'.format(model)
             types_for_model = [
                 t for t in self.type_mapping if t.startswith(type_name)]
