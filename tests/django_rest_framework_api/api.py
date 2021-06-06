@@ -12,29 +12,6 @@ class UserSerializer(serializers.ModelSerializer):
         exclude = ('password',)
 
 
-class AuthorSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
-    entries = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=Post.objects.all())
-    amount_of_entries = serializers.SerializerMethodField()
-    name = serializers.CharField(source='get_name')
-
-    class Meta:
-        model = Author
-        fields = [
-            'name',
-            'age',
-            'active',
-            'profile_picture',
-            'user',
-            'entries',
-            'amount_of_entries',
-        ]
-
-    def get_amount_of_entries(self, obj):
-        return obj.entries.count()
-
-
 class WrittenBySerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='get_name')
 
@@ -62,6 +39,29 @@ class PostSerializer(serializers.ModelSerializer):
             'rating',
             'files',
         ]
+
+
+class AuthorSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    entries = serializers.ListSerializer(
+         child=PostSerializer(source='entries'))
+    amount_of_entries = serializers.SerializerMethodField()
+    name = serializers.CharField(source='get_name')
+
+    class Meta:
+        model = Author
+        fields = [
+            'name',
+            'age',
+            'active',
+            'profile_picture',
+            'user',
+            'entries',
+            'amount_of_entries',
+        ]
+
+    def get_amount_of_entries(self, obj):
+        return obj.entries.count()
 
 
 class AuthorViewSet(viewsets.ModelViewSet):

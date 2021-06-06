@@ -133,6 +133,9 @@ class TestGraphWrapApi(TestGraphWrapBase):
             query {
                 all_authors {
                     name
+                    entries {
+                       content
+                    }
                 }
             }
             '''
@@ -147,7 +150,8 @@ class TestGraphWrapApi(TestGraphWrapBase):
         all_authors_data = json.loads(
             response.content)['data']['all_authors']
         self.assertEqual(
-            [{'name': 'PAUL'}, {'name': 'SCOTT'}],
+            [{'name': 'PAUL', 'entries': [{'content': 'My first post!'}]},
+             {'name': 'SCOTT', 'entries': []}],
             all_authors_data,
         )
 

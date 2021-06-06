@@ -89,14 +89,16 @@ class SerializerTransformer(object):
         if serializer_cls_name == 'NestedSerializer':
             model = named_field.parent.Meta.model.__name__.lower()
             return '{}__{}_type'.format(model, named_field.field_name)
+        elif isinstance(named_field, ListSerializer):
+            model = named_field.child.Meta.model.__name__.lower()
         else:
             model = named_field.Meta.model.__name__.lower()
-            type_name = '{}_type'.format(model)
-            types_for_model = [
-                t for t in self.type_mapping if t.startswith(type_name)]
-            if types_for_model:
-                type_name = '{}_{}'.format(type_name, len(types_for_model) + 1)
-            return type_name
+        type_name = '{}_type'.format(model)
+        types_for_model = [
+            t for t in self.type_mapping if t.startswith(type_name)]
+        if types_for_model:
+            type_name = '{}_{}'.format(type_name, len(types_for_model) + 1)
+        return type_name
 
     def _add_field_data(self, field):
         field_transformer = FieldTransformer.get_transformer(
@@ -196,17 +198,20 @@ class RelatedValuedFieldTransformer(FieldTransformer):
             serializer_cls_name = self._field.child.__class__.__name__
         else:
             serializer_cls_name = self._field.__class__.__name__
+
         if serializer_cls_name == 'NestedSerializer':
             model = self._field.parent.Meta.model.__name__.lower()
             return '{}__{}_type'.format(model, self._field.field_name)
+        elif isinstance(self._field, ListSerializer):
+            model = self._field.child.Meta.model.__name__.lower()
         else:
             model = self._field.Meta.model.__name__.lower()
-            type_name = '{}_type'.format(model)
-            types_for_model = [
-                t for t in self.type_mapping if t.startswith(type_name)]
-            if types_for_model:
-                type_name = '{}_{}'.format(type_name, len(types_for_model) + 1)
-            return type_name
+        type_name = '{}_type'.format(model)
+        types_for_model = [
+            t for t in self.type_mapping if t.startswith(type_name)]
+        if types_for_model:
+            type_name = '{}_{}'.format(type_name, len(types_for_model) + 1)
+        return type_name
 
 
 class HyperlinkedRelatedFieldTransformer(RelatedValuedFieldTransformer):
