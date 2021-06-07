@@ -89,6 +89,7 @@ class TestSchemaFactory(TestGraphWrapBase):
              'user',
              'entries',
              'amount_of_entries',
+             'colours',
              },
             set(author_type.fields),
         )
@@ -106,6 +107,7 @@ class TestSchemaFactory(TestGraphWrapBase):
             author_type, 'profile_picture', GraphQLScalarType)
         self.assertFieldType(author_type, 'user', GraphQLNonNull)
         self.assertFieldTypeOfType(author_type, 'user', GrapheneObjectType)
+        self.assertFieldTypeOfType(author_type, 'colours', GraphQLList)
 
     def test_post_type(self):
         post_type = self.type_map['post_type']

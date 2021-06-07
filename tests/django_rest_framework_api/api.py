@@ -47,6 +47,8 @@ class AuthorSerializer(serializers.ModelSerializer):
          child=PostSerializer(source='entries'))
     amount_of_entries = serializers.SerializerMethodField()
     name = serializers.CharField(source='get_name')
+    colours = serializers.ListField(
+        child=serializers.CharField(), default=['blue', 'green'])
 
     class Meta:
         model = Author
@@ -58,6 +60,7 @@ class AuthorSerializer(serializers.ModelSerializer):
             'user',
             'entries',
             'amount_of_entries',
+            'colours',
         ]
 
     def get_amount_of_entries(self, obj):

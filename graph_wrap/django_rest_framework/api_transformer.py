@@ -46,6 +46,12 @@ class ApiTransformer:
         self._all_serializers.insert(0, serializer)
 
     def _get_nested_serializer(self, field):
+        if isinstance(field, (
+                serializers.ListField,
+                serializers.DictField,
+                serializers.HStoreField,
+        )):
+            return None
         if hasattr(field, 'fields'):
             return field
         elif hasattr(field, 'child'):
@@ -274,6 +280,10 @@ class ListValuedFieldTransformer(FieldTransformer):
             required=self._graphene_field_required(),
             resolver=self.graphene_field_resolver_method(),
         )
+
+    @property
+    def graphene_type(self):
+        return self.get_transformer(self._field.child, {}).graphene_type
 
 
 class ListOfStringsValuedFieldTransformer(
