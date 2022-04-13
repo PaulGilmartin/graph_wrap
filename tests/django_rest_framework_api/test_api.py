@@ -128,6 +128,16 @@ class TestSchemaFactory(TestGraphWrapBase):
         self.assertFieldType(post_type, 'author', GraphQLNonNull)
         self.assertFieldTypeOfType(post_type, 'author', GrapheneObjectType)
 
+    def test_schema_keys(self):
+        self.assertEqual(
+            {'author_type',
+             'author_type_2',
+             'post_type',
+             'post__files_type',
+             'user_type'},
+            {x for x in self.schema.get_type_map().keys() if 'type' in x},
+        )
+
 
 class TestGraphWrapApi(TestGraphWrapBase):
     def test_all_authors_query(self):
