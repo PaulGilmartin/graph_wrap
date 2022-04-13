@@ -12,7 +12,7 @@ import six
 
 
 class ApiTransformer:
-    def __init__(self, api, type_mapping=None):
+    def __init__(self, api, type_mapping=None, seen_nested_serializers=None):
         self._api = api
         self._root_serializer = api.get_serializer()
         self._all_serializers = []
@@ -20,12 +20,14 @@ class ApiTransformer:
         self._root_serializer, *self._nested_serializers = self._all_serializers
         self._root_graphene_type_name = u'{}_type'.format(self._api.basename)
         self.type_mapping = type_mapping or dict()
+        self.seen_nested_serializers = seen_nested_serializers or dict()
 
     def root_type(self):
         root_type = SerializerTransformer(
             self._root_serializer,
             self.type_mapping,
             self._root_graphene_type_name,
+            seen_nested_serializers=self.seen_nested_serializers,
         ).graphene_object_type()
         return root_type
 
@@ -33,7 +35,10 @@ class ApiTransformer:
         non_root_types = []
         for nested in self._nested_serializers:
             nested_transformed = SerializerTransformer(
-                nested, self.type_mapping).graphene_object_type()
+                nested,
+                type_mapping=self.type_mapping,
+                seen_nested_serializers=self.seen_nested_serializers,
+            ).graphene_object_type()
             non_root_types.append(nested_transformed)
         return non_root_types
 
@@ -65,9 +70,11 @@ class SerializerTransformer(object):
             serializer,
             type_mapping=None,
             graphene_type_name='',
+            seen_nested_serializers=None,
     ):
         self._serializer = serializer
         self.type_mapping = type_mapping if type_mapping is not None else dict()
+        self.seen_nested_serializers = seen_nested_serializers if seen_nested_serializers is not None else dict()
         self._graphene_type_name = (
                 graphene_type_name or self._build_graphene_type_name())
         self._graphene_object_type_class_attrs = dict()
@@ -84,6 +91,7 @@ class SerializerTransformer(object):
                 self._graphene_object_type_class_attrs,
             )
             self.type_mapping[self._graphene_type_name] = graphene_type
+            self.seen_nested_serializers[self._graphene_type_name] = self._serializer
             return graphene_type
 
     def _build_graphene_type_name(self):
@@ -102,6 +110,11 @@ class SerializerTransformer(object):
         type_name = '{}_type'.format(model)
         types_for_model = [
             t for t in self.type_mapping if t.startswith(type_name)]
+        seen_serializers_for_model = [
+            x for x in self.seen_nested_serializers.items() if x[0] in types_for_model]
+        for type_name, serializer in seen_serializers_for_model:
+            if serializer.__class__ == self._serializer.__class__:
+                return type_name
         if types_for_model:
             type_name = '{}_{}'.format(type_name, len(types_for_model) + 1)
         return type_name

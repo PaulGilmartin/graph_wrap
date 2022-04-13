@@ -47,8 +47,13 @@ class SchemaFactory:
         query_class_attrs = dict()
         type_mapping = dict()
         non_root_types = []
+        seen_nested_serializers = dict()
         for api in self._apis:
-            api_transformer = ApiTransformer(api, type_mapping=type_mapping)
+            api_transformer = ApiTransformer(
+                api,
+                type_mapping=type_mapping,
+                seen_nested_serializers=seen_nested_serializers,
+            )
             root_type = api_transformer.root_type()
             filter_args = self._get_filter_args(api)
             query_attributes = get_query_attributes(
@@ -62,6 +67,7 @@ class SchemaFactory:
             query_class_attrs.update(**query_attributes)
             non_root_types.extend(api_transformer.non_root_types())
             type_mapping = api_transformer.type_mapping
+            seen_nested_serializers = api_transformer.seen_nested_serializers
         Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)
         schema = graphene.Schema(query=Query, types=non_root_types)
         return schema
