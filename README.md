@@ -309,6 +309,9 @@ Important points to note about the schema produced by GraphWrap:
   resource, and one corresponding to the data accessible via a GET request to the 'detail' endpoint of the
   resource. If we take our AuthorViewSet as an example:
     * the 'list' endpoint corresponds to the url `/author`. This maps to the `all_authors` field on the Query type.
+      Note that it is possible to change the naming convention of the list endpoint field by setting the
+      `LIST_ENDPOINT_RESOLVER_PREFIX` value in `settings.py`. For example, setting `LIST_ENDPOINT_RESOLVER_PREFIX = ''`
+      will mean this list endpoint url corresponds to the name `authors`.
     * the 'detail' endpoint corresponds to urls of the form '/author/{author_pk}'. This maps to the `author(id: Int!)`
       field on the Query type (where, in the usual GraphQL schema syntax, `(id: Int!)` indicates that an integer author
       id must be supplied.)

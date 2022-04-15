@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import datetime
 import json
 
+from django.conf import settings
 from django.test import TransactionTestCase
 from django.contrib.auth.models import User
 from graphene.types.definitions import GrapheneObjectType
@@ -166,6 +167,35 @@ class TestGraphWrapApi(TestGraphWrapBase):
              {'name': 'SCOTT', 'entries': []}],
             all_authors_data,
         )
+
+    def test_all_authors_query_list_endpoint_prefix(self):
+        settings.LIST_ENDPOINT_RESOLVER_PREFIX = ''
+        query = '''
+            query {
+                authors {
+                    name
+                    entries {
+                       content
+                    }
+                }
+            }
+            '''
+        body = {"query": query}
+        request_json = json.dumps(body)
+        response = self.client.post(
+            self.graphql_endpoint,
+            request_json,
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        all_authors_data = json.loads(
+            response.content)['data']['authors']
+        self.assertEqual(
+            [{'name': 'PAUL', 'entries': [{'content': 'My first post!'}]},
+             {'name': 'SCOTT', 'entries': []}],
+            all_authors_data,
+        )
+        delattr(settings, 'LIST_ENDPOINT_RESOLVER_PREFIX')
 
     def test_all_posts_query(self):
         query = '''
