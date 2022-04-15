@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import uuid
+
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -11,6 +13,7 @@ class Media(models.Model):
 
 
 class Author(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
     name = models.TextField()
     age = models.IntegerField(null=True)

@@ -158,7 +158,7 @@ class FieldTransformer:
             serializers.HyperlinkedRelatedField: HyperlinkedRelatedFieldTransformer,
             serializers.RelatedField: StringValuedFieldTransformer,
             serializers.TimeField: StringValuedFieldTransformer,
-            serializers.UUIDField: StringValuedFieldTransformer,
+            serializers.UUIDField: UUIDValuedFieldTransformer,
         }
         transformer_class = next(
             (v for t, v in base_types.items() if isinstance(field, t)),
@@ -252,6 +252,10 @@ class GenericValuedFieldTransformer(ScalarValuedFieldTransformer):
 
 class StringValuedFieldTransformer(ScalarValuedFieldTransformer):
     graphene_type = graphene.String
+
+
+class UUIDValuedFieldTransformer(ScalarValuedFieldTransformer):
+    graphene_type = graphene.UUID
 
 
 class IntegerValuedFieldTransformer(ScalarValuedFieldTransformer):

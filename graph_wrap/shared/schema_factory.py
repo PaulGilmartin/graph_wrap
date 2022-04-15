@@ -13,10 +13,14 @@ def get_query_attributes(
     all_items_field_name = get_list_endpoint_resolver_name(single_item_field_name)
     single_item_resolver_name = 'resolve_{}'.format(single_item_field_name)
     all_items_resolver_name = 'resolve_{}'.format(all_items_field_name)
+    try:
+        id_type = graphene_type.id.__class__
+    except AttributeError:
+        id_type = graphene.Int
     return {
         single_item_field_name: graphene.Field(
             graphene_type,
-            id=graphene.Int(required=True),
+            id=id_type(required=True),
             name=single_item_field_name,
         ),
         all_items_field_name: graphene.List(

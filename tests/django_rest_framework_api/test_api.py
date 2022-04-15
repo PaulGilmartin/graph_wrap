@@ -91,6 +91,7 @@ class TestSchemaFactory(TestGraphWrapBase):
              'entries',
              'amount_of_entries',
              'colours',
+             'id',
              },
             set(author_type.fields),
         )
@@ -267,7 +268,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
     def test_single_author_query(self):
         query = '''
             query {
-                author(id: %d) {
+                author(id: "%s") {
                     name
                     amount_of_entries
                     age

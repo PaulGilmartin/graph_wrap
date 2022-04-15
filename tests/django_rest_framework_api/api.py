@@ -61,6 +61,7 @@ class AuthorSerializer(serializers.ModelSerializer):
             'entries',
             'amount_of_entries',
             'colours',
+            'id',
         ]
 
     def get_amount_of_entries(self, obj):
