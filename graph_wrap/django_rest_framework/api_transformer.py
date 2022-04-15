@@ -121,7 +121,7 @@ class SerializerTransformer(object):
 
     def _add_field_data(self, field):
         field_transformer = FieldTransformer.get_transformer(
-            field, self.type_mapping)
+            field, self.type_mapping, self.seen_nested_serializers)
         graphene_field = field_transformer.graphene_field()
         self._graphene_object_type_class_attrs[field.field_name] = graphene_field
         resolver_method_name = 'resolve_{}'.format(field.field_name)
@@ -132,16 +132,18 @@ class SerializerTransformer(object):
 class FieldTransformer:
     graphene_type = None
 
-    def __init__(self, field, type_mapping=None):
+    def __init__(self, field, type_mapping=None, seen_nested_serializers=None):
         self._field = field
         self.type_mapping = type_mapping if type_mapping is not None else dict()
+        self.seen_nested_serializers = seen_nested_serializers if seen_nested_serializers is not None else dict()
 
     @classmethod
-    def get_transformer(cls, field, type_mapping):
+    def get_transformer(
+            cls, field, type_mapping, seen_nested_serializers=None):
         if hasattr(field, 'child') and isinstance(
                 field.child, serializers.ModelSerializer):
             # for ListSerializers from M2M fields
-            return RelatedValuedFieldTransformer(field, type_mapping)
+            return RelatedValuedFieldTransformer(field, type_mapping, seen_nested_serializers)
 
         base_types = {
             serializers.BooleanField: BooleanValuedFieldTransformer,
@@ -164,7 +166,7 @@ class FieldTransformer:
             (v for t, v in base_types.items() if isinstance(field, t)),
             GenericValuedFieldTransformer,
         )
-        return transformer_class(field, type_mapping)
+        return transformer_class(field, type_mapping, seen_nested_serializers)
 
     def graphene_field(self):
         pass
@@ -189,9 +191,9 @@ class ScalarValuedFieldTransformer(FieldTransformer):
 
 
 class RelatedValuedFieldTransformer(FieldTransformer):
-    def __init__(self, field, type_mapping=None):
+    def __init__(self, field, type_mapping=None, seen_nested_serializers=None):
         super(RelatedValuedFieldTransformer, self).__init__(
-            field, type_mapping)
+            field, type_mapping, seen_nested_serializers)
         self._field_class = field.__class__
         self._is_to_many = getattr(field, 'many', False)
 
@@ -209,14 +211,18 @@ class RelatedValuedFieldTransformer(FieldTransformer):
     def graphene_type(self):
         # Needs to be lazy since at this point the related
         # type may not yet have been created
-        name = self._build_graphene_type_name()
-        return lambda: self.type_mapping[name]
+        return lambda: self.type_mapping[self._type_name()]
+
+    def _type_name(self):
+        return self._build_graphene_type_name()
 
     def _build_graphene_type_name(self):
         if isinstance(self._field, ListSerializer):
-            serializer_cls_name = self._field.child.__class__.__name__
+            serializer_cls = self._field.child.__class__
         else:
-            serializer_cls_name = self._field.__class__.__name__
+            serializer_cls = self._field.__class__
+
+        serializer_cls_name = serializer_cls.__name__
 
         if serializer_cls_name == 'NestedSerializer':
             model = self._field.parent.Meta.model.__name__.lower()
@@ -228,6 +234,11 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         type_name = '{}_type'.format(model)
         types_for_model = [
             t for t in self.type_mapping if t.startswith(type_name)]
+        seen_serializers_for_model = [
+            x for x in self.seen_nested_serializers.items() if x[0] in types_for_model]
+        for type_name, serializer in seen_serializers_for_model:
+            if serializer.__class__ == serializer_cls:
+                return type_name
         if types_for_model:
             type_name = '{}_{}'.format(type_name, len(types_for_model) + 1)
         return type_name
