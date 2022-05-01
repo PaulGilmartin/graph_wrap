@@ -81,7 +81,7 @@ class TestSchemaFactory(TestGraphWrapBase):
         )
 
     def test_author_type(self):
-        author_type = self.type_map['author_type']
+        author_type = self.type_map['author_type_2']
         self.assertEqual(
             {'name',
              'age',
@@ -329,7 +329,7 @@ class TestGraphWrapApi(TestGraphWrapBase):
             fragment postFragment on post_type {
                 content
             }
-            fragment authorFragment on author_type_2 {
+            fragment authorFragment on author_type {
                 name
             }
             '''

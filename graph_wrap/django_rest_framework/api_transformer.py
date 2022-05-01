@@ -26,7 +26,6 @@ class ApiTransformer:
         root_type = SerializerTransformer(
             self._root_serializer,
             self.type_mapping,
-            self._root_graphene_type_name,
             seen_nested_serializers=self.seen_nested_serializers,
         ).graphene_object_type()
         return root_type
@@ -69,14 +68,13 @@ class SerializerTransformer(object):
             self,
             serializer,
             type_mapping=None,
-            graphene_type_name='',
             seen_nested_serializers=None,
     ):
         self._serializer = serializer
         self.type_mapping = type_mapping if type_mapping is not None else dict()
-        self.seen_nested_serializers = seen_nested_serializers if seen_nested_serializers is not None else dict()
-        self._graphene_type_name = (
-                graphene_type_name or self._build_graphene_type_name())
+        self.seen_nested_serializers = (
+            seen_nested_serializers if seen_nested_serializers is not None else dict())
+        self._graphene_type_name = self._build_graphene_type_name()
         self._graphene_object_type_class_attrs = dict()
 
     def graphene_object_type(self):
@@ -231,6 +229,9 @@ class RelatedValuedFieldTransformer(FieldTransformer):
             model = self._field.child.Meta.model.__name__.lower()
         else:
             model = self._field.Meta.model.__name__.lower()
+        return self._get_type_number_for_model(model, serializer_cls)
+
+    def _get_type_number_for_model(self, model, serializer_cls):
         type_name = '{}_type'.format(model)
         types_for_model = [
             t for t in self.type_mapping if t.startswith(type_name)]
@@ -252,9 +253,9 @@ class HyperlinkedRelatedFieldTransformer(RelatedValuedFieldTransformer):
         related_view_name = related_view_name.split('-')[0]
         related_view_set = next(
             (v for v in views if v.basename == related_view_name))
-        serializer = related_view_set.get_serializer()
-        model = serializer.Meta.model.__name__.lower()
-        return '{}_type'.format(model)
+        related_serializer = related_view_set.get_serializer()
+        model = related_serializer.Meta.model.__name__.lower()
+        return self._get_type_number_for_model(model, related_serializer.__class__)
 
 
 class GenericValuedFieldTransformer(ScalarValuedFieldTransformer):
