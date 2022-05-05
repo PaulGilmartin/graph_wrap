@@ -5,22 +5,29 @@ import graphene
 from graphene import ObjectType
 from graphene.types.generic import GenericScalar
 from rest_framework import serializers
+from rest_framework.filters import SearchFilter
 from rest_framework.serializers import ListSerializer
+from rest_framework.settings import api_settings
 
 from graph_wrap.shared.query_resolver import JSONResolver
 import six
 
 
 class ApiTransformer:
-    def __init__(self, api, type_mapping=None, seen_nested_serializers=None):
+    def __init__(
+            self,
+            api,
+            type_mapping=None,
+            seen_nested_serializers=None,
+    ):
         self._api = api
         self._root_serializer = api.get_serializer()
         self._all_serializers = []
         self._collect_nested_serializers(self._root_serializer)
         self._root_serializer, *self._nested_serializers = self._all_serializers
-        self._root_graphene_type_name = u'{}_type'.format(self._api.basename)
         self.type_mapping = type_mapping or dict()
         self.seen_nested_serializers = seen_nested_serializers or dict()
+        self.api_filters = get_filter_args(self._api)
 
     def root_type(self):
         root_type = SerializerTransformer(
@@ -61,6 +68,25 @@ class ApiTransformer:
         elif hasattr(field, 'child'):
             return field.child
         return None
+
+
+def get_filter_args(api):
+    filter_args = {}
+    filter_backends = api.filter_backends
+    for filt in filter_backends:
+        if issubclass(filt, SearchFilter):
+            filter_args[api_settings.SEARCH_PARAM] = graphene.String(
+                name=api_settings.SEARCH_PARAM)
+        try:
+            import django_filters.rest_framework
+        except ImportError:
+            continue
+        else:
+            from django_filters.rest_framework import DjangoFilterBackend
+            if issubclass(filt, DjangoFilterBackend):
+                filter_args['orm_filters'] = graphene.String(
+                    name='orm_filters')
+    return filter_args
 
 
 class SerializerTransformer(object):
@@ -131,9 +157,12 @@ class FieldTransformer:
     graphene_type = None
 
     def __init__(self, field, type_mapping=None, seen_nested_serializers=None):
+        from graph_wrap.django_rest_framework.schema_factory import SchemaFactory
         self._field = field
         self.type_mapping = type_mapping if type_mapping is not None else dict()
         self.seen_nested_serializers = seen_nested_serializers if seen_nested_serializers is not None else dict()
+        self.api_serializers = {
+            api.get_serializer().__class__: api for api in SchemaFactory.usable_views()}
 
     @classmethod
     def get_transformer(
@@ -196,14 +225,23 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         self._is_to_many = getattr(field, 'many', False)
 
     def graphene_field(self):
-        wrapper = graphene.List if self._is_to_many else graphene.Field
-        graphene_field = wrapper(
-            self.graphene_type,
-            name=self._graphene_field_name(),
-            required=self._graphene_field_required(),
-            resolver=self.graphene_field_resolver_method(),
-        )
-        return graphene_field
+        if self._is_to_many:
+            api = self.api_serializers.get(self._get_serializer_cls())
+            filters = get_filter_args(api) if api else {}
+            return graphene.List(
+                self.graphene_type,
+                name=self._graphene_field_name(),
+                required=self._graphene_field_required(),
+                resolver=self.graphene_field_resolver_method(),
+                **filters
+            )
+        else:
+            return graphene.Field(
+                self.graphene_type,
+                name=self._graphene_field_name(),
+                required=self._graphene_field_required(),
+                resolver=self.graphene_field_resolver_method(),
+            )
 
     @property
     def graphene_type(self):
@@ -215,13 +253,8 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         return self._build_graphene_type_name()
 
     def _build_graphene_type_name(self):
-        if isinstance(self._field, ListSerializer):
-            serializer_cls = self._field.child.__class__
-        else:
-            serializer_cls = self._field.__class__
-
+        serializer_cls = self._get_serializer_cls()
         serializer_cls_name = serializer_cls.__name__
-
         if serializer_cls_name == 'NestedSerializer':
             model = self._field.parent.Meta.model.__name__.lower()
             return '{}__{}_type'.format(model, self._field.field_name)
@@ -230,6 +263,12 @@ class RelatedValuedFieldTransformer(FieldTransformer):
         else:
             model = self._field.Meta.model.__name__.lower()
         return self._get_type_number_for_model(model, serializer_cls)
+
+    def _get_serializer_cls(self):
+        if isinstance(self._field, ListSerializer):
+            return self._field.child.__class__
+        else:
+            return self._field.__class__
 
     def _get_type_number_for_model(self, model, serializer_cls):
         type_name = '{}_type'.format(model)

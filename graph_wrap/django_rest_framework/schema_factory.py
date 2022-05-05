@@ -1,11 +1,9 @@
 from __future__ import unicode_literals
 
-from rest_framework.filters import SearchFilter
 from rest_framework.schemas.generators import EndpointEnumerator
 from rest_framework.schemas.generators import BaseSchemaGenerator
 import graphene
 from rest_framework import viewsets
-from rest_framework.settings import api_settings
 
 from graph_wrap.shared.schema_factory import get_query_attributes
 from .query_resolver import (
@@ -55,14 +53,13 @@ class SchemaFactory:
                 seen_nested_serializers=seen_nested_serializers,
             )
             root_type = api_transformer.root_type()
-            filter_args = self._get_filter_args(api)
             query_attributes = get_query_attributes(
                 api,
                 api.basename,
                 root_type,
                 SingleItemQueryResolver,
                 AllItemsQueryResolver,
-                **filter_args
+                **api_transformer.api_filters
             )
             query_class_attrs.update(**query_attributes)
             non_root_types.extend(api_transformer.non_root_types())
@@ -71,22 +68,4 @@ class SchemaFactory:
         Query = type(str('Query'), (graphene.ObjectType,), query_class_attrs)
         schema = graphene.Schema(query=Query, types=non_root_types)
         return schema
-
-    def _get_filter_args(self, api):
-        filter_args = {}
-        filter_backends = api.filter_backends
-        for filt in filter_backends:
-            if issubclass(filt, SearchFilter):
-                filter_args[api_settings.SEARCH_PARAM] = graphene.String(
-                    name=api_settings.SEARCH_PARAM)
-            try:
-                import django_filters.rest_framework
-            except ImportError:
-                continue
-            else:
-                from django_filters.rest_framework import DjangoFilterBackend
-                if issubclass(filt, DjangoFilterBackend):
-                    filter_args['orm_filters'] = graphene.String(
-                        name='orm_filters')
-        return filter_args
 
