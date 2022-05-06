@@ -17,14 +17,15 @@ def get_query_attributes(
         id_type = graphene_type.id.__class__
     except AttributeError:
         id_type = graphene.Int
+    all_items_field = graphene.List(
+        graphene_type, name=all_items_field_name, args=filters)
     return {
         single_item_field_name: graphene.Field(
             graphene_type,
             id=id_type(required=True),
             name=single_item_field_name,
         ),
-        all_items_field_name: graphene.List(
-            graphene_type, name=all_items_field_name, **filters),
+        all_items_field_name: all_items_field,
         single_item_resolver_name: single_item_resolver_cls(
             field_name=single_item_field_name, api=api),
         all_items_resolver_name: all_items_resolver_cls(

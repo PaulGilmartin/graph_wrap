@@ -36,6 +36,13 @@ class GraphQLResolveInfoTransformer(object):
         if 'orm_filters' in self._field_kwargs:
             query_string = self._field_kwargs['orm_filters']
             environ_overrides['QUERY_STRING'] = query_string
+        else:
+            query_string = ''
+            for k, v in self._field_kwargs.items():
+                query_string += '{}={}&'.format(k, v)
+            query_string = query_string.rstrip('&')
+            environ_overrides['QUERY_STRING'] = query_string
+
         environ.update(environ_overrides)
         get_request = WSGIRequest(environ)
         get_request.user = self._request.user

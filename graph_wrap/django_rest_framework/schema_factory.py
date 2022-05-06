@@ -88,5 +88,8 @@ class SchemaFactory:
                 if issubclass(filt, DjangoFilterBackend):
                     filter_args['orm_filters'] = graphene.String(
                         name='orm_filters')
+                    for arg in api.filterset_fields:
+                        filter_args[arg] = graphene.String(
+                            name=arg)
         return filter_args
 
