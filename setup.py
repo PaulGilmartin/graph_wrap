@@ -24,7 +24,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="graph-wrap",
-    version="0.1.1",
+    version="0.1.2",
     description="Extend an existing Django REST Framework or Tastypie API with a GraphQL"
                 " interface with a only a couple of lines of code.",
     long_description=long_description,
