@@ -1,9 +1,16 @@
 from __future__ import unicode_literals
 
 from django.contrib.auth.models import User
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import serializers, viewsets, filters
 
-from tests.models import Author, Post
+from tests.models import Author, Post, Media
+
+
+class MediaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Media
+        fields = '__all__'
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -26,6 +33,7 @@ class PostSerializer(serializers.ModelSerializer):
         view_name='author-detail',
         read_only=True
     )
+    files = MediaSerializer(allow_null=True, many=True)
 
     class Meta:
         model = Post
@@ -71,11 +79,22 @@ class AuthorSerializer(serializers.ModelSerializer):
 class AuthorViewSet(viewsets.ModelViewSet):
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['name', 'age', 'entries__content']
+    filterset_fields = ['name', 'entries__content', 'entries__files__size']
 
 
 class PostViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    filter_backends = [filters.SearchFilter]  #, DjangoFilterBackend]
-    search_fields = ['content', 'author__name']
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['author__name', 'content']
     filterset_fields = ['author__name', 'content']
+
+
+class MediaViewSet(viewsets.ModelViewSet):
+    queryset = Media.objects.all()
+    serializer_class = MediaSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['name', 'content_type', 'size']
+    filterset_fields = ['name', 'content_type', 'size']
