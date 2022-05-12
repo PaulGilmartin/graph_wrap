@@ -76,7 +76,13 @@ class TestSchemaFactory(TestGraphWrapBase):
 
     def test_query_fields(self):
         self.assertEqual(
-            {'author', 'all_authors', 'post', 'all_posts'},
+            {'author',
+             'all_authors',
+             'post',
+             'all_posts',
+             'all_medias',
+             'media',
+             },
             set(self.query.fields),
         )
 
@@ -114,7 +120,14 @@ class TestSchemaFactory(TestGraphWrapBase):
     def test_post_type(self):
         post_type = self.type_map['post_type']
         self.assertEqual(
-            {'content', 'date', 'written_by', 'rating', 'files', 'author'},
+            {'content',
+             'date',
+             'written_by',
+             'rating',
+             'files',
+             'author',
+             'related_files',
+             },
             set(post_type.fields),
         )
         self.assertFieldType(post_type, 'content', GraphQLNonNull)
@@ -136,6 +149,7 @@ class TestSchemaFactory(TestGraphWrapBase):
              'author_type_2',
              'post_type',
              'post__files_type',
+             'media_type',
              'user_type'},
             {x for x in self.schema.get_type_map().keys() if 'type' in x},
         )
@@ -408,36 +422,6 @@ class TestGraphWrapApi(TestGraphWrapBase):
             len(all_authors_data),
         )
 
-    # Requires django_filter package to pass
-    # def test_all_posts_query_with_django_filters_argument(self):
-    #     Post.objects.create(
-    #         content='Blah',
-    #         author=self.scott,
-    #         date=datetime.datetime.now(),
-    #         rating=u'7.00',
-    #     )
-    #     query = '''
-    #         query {
-    #             all_posts(orm_filters: "author__name=Paul") {
-    #                 content
-    #             }
-    #         }
-    #         '''
-    #     body = {"query": query}
-    #     request_json = json.dumps(body)
-    #     response = self.client.post(
-    #         self.graphql_endpoint,
-    #         request_json,
-    #         content_type="application/json",
-    #     )
-    #     self.assertEqual(response.status_code, 200)
-    #     all_authors_data = json.loads(
-    #         response.content)['data']['all_posts']
-    #     self.assertEqual(
-    #         1,
-    #         len(all_authors_data),
-    #     )
-
     def test_get_rest_api_with_search_filter(self):
         Post.objects.create(
             content='Blah',
@@ -453,25 +437,359 @@ class TestGraphWrapApi(TestGraphWrapBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(1, len(response.json()))
 
-    # Requires django_filter package to pass
-    # def test_get_rest_api_with_django_filter(self):
-    #     Post.objects.create(
-    #         content='Blah',
-    #         author=self.scott,
-    #         date=datetime.datetime.now(),
-    #         rating=u'7.00',
-    #     )
-    #     response = self.client.get(
-    #         '/django_rest/post/',
-    #         content_type='application/json',
-    #         data={'author__name': 'Paul'}
-    #     )
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(1, len(response.json()))
-
     def test_get_rest_api_detail(self):
         response = self.client.get(
             '/django_rest/writer/{}/'.format(self.paul.pk),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
+
+# Requires django_filter package to pass
+# class TestGenericFilters(TestGraphWrapBase):
+#
+#
+#     def test_get_rest_api_with_django_filter(self):
+#         Post.objects.create(
+#             content='Blah',
+#             author=self.scott,
+#             date=datetime.datetime.now(),
+#             rating=u'7.00',
+#         )
+#         response = self.client.get(
+#             '/django_rest/post/',
+#             content_type='application/json',
+#             data={'author__name': 'Paul'}
+#         )
+#         self.assertEqual(response.status_code, 200)
+#         self.assertEqual(1, len(response.json()))
+#
+#     def test_all_posts_query_with_generic_filters_argument_old_style(self):
+#         Post.objects.create(
+#             content='Blah',
+#             author=self.scott,
+#             date=datetime.datetime.now(),
+#             rating=u'7.00',
+#         )
+#         query = '''
+#             query {
+#                 all_posts(orm_filters: "content=Blah") {
+#                     content
+#                 }
+#             }
+#             '''
+#         body = {"query": query}
+#         request_json = json.dumps(body)
+#         response = self.client.post(
+#             self.graphql_endpoint,
+#             request_json,
+#             content_type="application/json",
+#         )
+#         self.assertEqual(response.status_code, 200)
+#         all_authors_data = json.loads(
+#             response.content)['data']['all_posts']
+#         self.assertEqual(
+#             1,
+#             len(all_authors_data),
+#         )
+#
+#     def test_all_posts_query_with_generic_filters_argument_2_old_style(self):
+#         Post.objects.create(
+#             content='Blah',
+#             author=self.scott,
+#             date=datetime.datetime.now(),
+#             rating=u'7.00',
+#         )
+#         query = '''
+#             query {
+#                 all_posts(orm_filters: "content=Blue") {
+#                     content
+#                 }
+#             }
+#             '''
+#         body = {"query": query}
+#         request_json = json.dumps(body)
+#         response = self.client.post(
+#             self.graphql_endpoint,
+#             request_json,
+#             content_type="application/json",
+#         )
+#         self.assertEqual(response.status_code, 200)
+#         all_authors_data = json.loads(
+#             response.content)['data']['all_posts']
+#         self.assertEqual(
+#             0,
+#             len(all_authors_data),
+#         )
+#
+#     def test_all_posts_query_with_django_filters_argument(self):
+#         Post.objects.create(
+#             content='Blah',
+#             author=self.scott,
+#             date=datetime.datetime.now(),
+#             rating=u'7.00',
+#         )
+#         query = '''
+#             query {
+#                 all_posts(orm_filters: "author__name=Paul") {
+#                     content
+#                 }
+#             }
+#             '''
+#         body = {"query": query}
+#         request_json = json.dumps(body)
+#         response = self.client.post(
+#             self.graphql_endpoint,
+#             request_json,
+#             content_type="application/json",
+#         )
+#         self.assertEqual(response.status_code, 200)
+#         all_authors_data = json.loads(
+#             response.content)['data']['all_posts']
+#         self.assertEqual(
+#             1,
+#             len(all_authors_data),
+#         )
+#
+#
+#     def test_all_posts_query_with_generic_filters_argument_1(self):
+#         Post.objects.create(
+#             content='Blah',
+#             author=self.scott,
+#             date=datetime.datetime.now(),
+#             rating=u'7.00',
+#         )
+#         query = '''
+#             query {
+#                 all_posts(content:"Blah") {
+#                     content
+#                 }
+#             }
+#             '''
+#         body = {"query": query}
+#         request_json = json.dumps(body)
+#         response = self.client.post(
+#             self.graphql_endpoint,
+#             request_json,
+#             content_type="application/json",
+#         )
+#         self.assertEqual(response.status_code, 200)
+#         all_authors_data = json.loads(
+#             response.content)['data']['all_posts']
+#         self.assertEqual(
+#             1,
+#             len(all_authors_data),
+#         )
+#
+#     def test_all_posts_query_with_generic_filters_argument_2(self):
+#         Post.objects.create(
+#             content='Blah',
+#             author=self.scott,
+#             date=datetime.datetime.now(),
+#             rating=u'7.00',
+#         )
+#         query = '''
+#             query {
+#                 all_posts(content:"Another") {
+#                     content
+#                 }
+#             }
+#             '''
+#         body = {"query": query}
+#         request_json = json.dumps(body)
+#         response = self.client.post(
+#             self.graphql_endpoint,
+#             request_json,
+#             content_type="application/json",
+#         )
+#         self.assertEqual(response.status_code, 200)
+#         all_authors_data = json.loads(
+#             response.content)['data']['all_posts']
+#         self.assertEqual(
+#             0,
+#             len(all_authors_data),
+#         )
+#
+#     def test_all_posts_query_with_generic_filters_argument_3(self):
+#         Post.objects.create(
+#             content='Blah',
+#             author=self.scott,
+#             date=datetime.datetime.now(),
+#             rating=u'7.00',
+#         )
+#         query = '''
+#             query {
+#                 all_posts(content:"Blah", author__name:"Scott") {
+#                     content
+#                 }
+#             }
+#             '''
+#         body = {"query": query}
+#         request_json = json.dumps(body)
+#         response = self.client.post(
+#             self.graphql_endpoint,
+#             request_json,
+#             content_type="application/json",
+#         )
+#         self.assertEqual(response.status_code, 200)
+#         all_authors_data = json.loads(
+#             response.content)['data']['all_posts']
+#         self.assertEqual(
+#             1,
+#             len(all_authors_data),
+#         )
+#
+#     def test_all_posts_query_with_generic_filters_argument_4(self):
+#         Post.objects.create(
+#             content='Blah',
+#             author=self.scott,
+#             date=datetime.datetime.now(),
+#             rating=u'7.00',
+#         )
+#         Post.objects.create(
+#             content='yo',
+#             author=self.scott,
+#             date=datetime.datetime.now(),
+#             rating=u'7.00',
+#         )
+#         query = '''
+#             query {
+#                 all_posts(content:"Blah", author__name:"Scott") {
+#                     content
+#                 }
+#             }
+#             '''
+#         body = {"query": query}
+#         request_json = json.dumps(body)
+#         response = self.client.post(
+#             self.graphql_endpoint,
+#             request_json,
+#             content_type="application/json",
+#         )
+#         self.assertEqual(response.status_code, 200)
+#         all_authors_data = json.loads(
+#             response.content)['data']['all_posts']
+#         self.assertEqual(
+#             1,
+#             len(all_authors_data),
+#         )
+#
+#     def test_all_authors_query_with_generic_filters_argument(self):
+#         post = Post.objects.create(
+#             content='Blah',
+#             author=self.scott,
+#             date=datetime.datetime.now(),
+#             rating=u'7.00',
+#         )
+#         query = '''
+#             query {
+#                 all_authors(entries__content:"Blah", entries__files__size:"10", ) {
+#                     name
+#                 }
+#             }
+#             '''
+#         body = {"query": query}
+#         request_json = json.dumps(body)
+#         response = self.client.post(
+#             self.graphql_endpoint,
+#             request_json,
+#             content_type="application/json",
+#         )
+#         self.assertEqual(response.status_code, 200)
+#         all_authors_data = json.loads(
+#             response.content)['data']['all_authors']
+#         self.assertEqual(
+#             0,
+#             len(all_authors_data),
+#         )
+#         profile_picture = Media.objects.create(
+#             name='scott.jpg', size=10)
+#         post.files.add(profile_picture)
+#         query = '''
+#             query {
+#                 all_authors(entries__content:"Blah", entries__files__size:"10", ) {
+#                     name
+#                 }
+#             }
+#             '''
+#         body = {"query": query}
+#         request_json = json.dumps(body)
+#         response = self.client.post(
+#             self.graphql_endpoint,
+#             request_json,
+#             content_type="application/json",
+#         )
+#         self.assertEqual(response.status_code, 200)
+#         all_authors_data = json.loads(
+#             response.content)['data']['all_authors']
+#         self.assertEqual(
+#             1,
+#             len(all_authors_data),
+#         )
+#
+#     def test_all_authors_query_with_nested_generic_filters_argument_1(self):
+#         Post.objects.create(
+#             content='Blah',
+#             author=self.scott,
+#             date=datetime.datetime.now(),
+#             rating=u'7.00',
+#         )
+#         query = '''
+#             query {
+#                 all_authors(orm_filters: "name=Scott&age=28") {
+#                     entries(orm_filters: "content=Something Else") {
+#                         content
+#                         files(orm_filters: "size=10") {
+#                             content_type
+#                         }
+#                     }
+#                 }
+#             }
+#             '''
+#         body = {"query": query}
+#         request_json = json.dumps(body)
+#         response = self.client.post(
+#             self.graphql_endpoint,
+#             request_json,
+#             content_type="application/json",
+#         )
+#         self.assertEqual(response.status_code, 200)
+#         all_authors_data = json.loads(
+#             response.content)['data']['all_authors']
+#         self.assertEqual(
+#             0,
+#             len(all_authors_data),
+#         )
+#
+#     def test_all_authors_query_with_nested_generic_filters_argument_2(self):
+#         Post.objects.create(
+#             content='Blah',
+#             author=self.scott,
+#             date=datetime.datetime.now(),
+#             rating=u'7.00',
+#         )
+#         query = '''
+#             query {
+#                 all_authors(orm_filters: "name=Scott&age=28") {
+#                     entries(orm_filters: "content=Blah") {
+#                         content
+#                         files(orm_filters: "size=10") {
+#                             content_type
+#                         }
+#                     }
+#                 }
+#             }
+#             '''
+#         body = {"query": query}
+#         request_json = json.dumps(body)
+#         response = self.client.post(
+#             self.graphql_endpoint,
+#             request_json,
+#             content_type="application/json",
+#         )
+#         self.assertEqual(response.status_code, 200)
+#         all_authors_data = json.loads(
+#             response.content)['data']['all_authors']
+#         self.assertEqual(
+#             0,
+#             len(all_authors_data),
+#         )
